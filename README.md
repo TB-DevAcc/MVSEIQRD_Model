@@ -23,7 +23,7 @@ Tweak hyperparameters to review different scenarios.
 
 **Tobias Becher** <br>
 **Maximilian Fischer**<br>
-**Artur**<br>
+**Artur Safenreiter**<br>
 
 ## :pray: Acknowledgments
 
