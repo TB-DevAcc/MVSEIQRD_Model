@@ -2,20 +2,25 @@ import numpy as np
 from scipy.integrate import solve_ivp
 
 
-class SEIQRDModel:
+class SEIQRDSModel:
 
     def __init__(self, D, K, N_total, N, B,
-                 S0, E_tr0, E_nt0, I_asym0, I_sym0, I_sev0, Q_asym0, Q_sym0, Q_sev0, R0, D0,
-                 alpha, beta_asym, beta_sym, beta_sev, gamma_asym, gamma_sym, gamma_sev,
-                 gamma_sev_r, gamma_sev_d, epsilon, eta, nu, psi, sigma):
+                 M0, S0, V0, E_tr0, E_nt0, I_asym0, I_sym0, I_sev0, Q_asym0, Q_sym0, Q_sev0, R0, D0,
+                 beta_asym, beta_sym, beta_sev, gamma_asym, gamma_sym, gamma_sev, gamma_sev_r, gamma_sev_d,
+                 gamma_asym_sym, gamma_asym_sev, gamma_asym_q, gamma_sym_sev, gamma_sev_sym, gamma_sev_q,
+                 epsilon, my, ny, rho,
+                 eta, xi, psi, sigma, tau, kappa,
+                 theta):
         """
-        Initialize SEIQRD model
+        Initialize SEIQRDS model
         :param D: Number of districts
         :param K: Number of groups
         :param N_total: Number of people in district
         :param N: Number of people in district per group
         :param B: Number of hospital beds in district
+        :param M0: Number of born individuals
         :param S0:
+        :param V0: Number of vaccinated individuals
         :param E_tr0:
         :param E_nt0:
         :param I_asym0:
@@ -26,7 +31,6 @@ class SEIQRDModel:
         :param Q_sev0:
         :param R0:
         :param D0:
-        :param alpha: rate of recovered people who are susceptible again
         :param beta_asym:
         :param beta_sym:
         :param beta_sev:
@@ -35,18 +39,32 @@ class SEIQRDModel:
         :param gamma_sev:
         :param gamma_sev_r:
         :param gamma_sev_d:
-        :param epsilon:
-        :param eta:
-        :param nu:
-        :param psi:
-        :param sigma:
+        :param gamma_asym_sym: {I/Q}_asym -> {I/Q}_sym
+        :param gamma_asym_sev: {I/Q}_asym -> {I/Q}_sev
+        :param gamma_asym_q: I_asym -> Q_asym
+        :param gamma_sym_sev: {I/Q}_sym -> {I/Q}_sev
+        :param gamma_sev_sym: {I/Q}_sev -> {I/Q}_sym
+        :param gamma_sev_q: I_sev -> Q_sev
+        :param epsilon: latency time
+        :param my: immunity after birth
+        :param ny: immunity after vaccination
+        :param rho: immunity after recovering
+        :param eta: rate of asymptomatic infectious individuals
+        :param xi: rate of severely symptomatic infectious individuals
+        :param psi: rate of individuals using tracing app
+        :param sigma: death rate of severely infections
+        :param tau:  rate of recovered individuals who are susceptible again
+        :param kappa: rate of vaccination
+        :param theta: natural birth rate
         """
         self.__D = D
         self.__K = K
         self.__N_total = N_total
         self.__N = N
         self.__B = B
+        self.__M0 = M0
         self.__S0 = S0
+        self.__V0 = V0
         self.__E_tr0 = E_tr0
         self.__E_nt0 = E_nt0
         self.__I_asym0 = I_asym0
@@ -57,7 +75,6 @@ class SEIQRDModel:
         self.__Q_sev0 = Q_sev0
         self.__R0 = R0
         self.__D0 = D0
-        self.__alpha = alpha
         self.__beta_asym = beta_asym
         self.__beta_sym = beta_sym
         self.__beta_sev = beta_sev
@@ -66,11 +83,23 @@ class SEIQRDModel:
         self.__gamma_sev = gamma_sev
         self.__gamma_sev_r = gamma_sev_r
         self.__gamma_sev_d = gamma_sev_d
+        self.__gamma_asym_sym = gamma_asym_sym
+        self.__gamma_asym_sev = gamma_asym_sev
+        self.__gamma_asym_q = gamma_asym_q
+        self.__gamma_sym_sev = gamma_sym_sev
+        self.__gamma_sev_sym = gamma_sev_sym
+        self.__gamma_sev_q = gamma_sev_q
         self.__epsilon = epsilon
         self.__eta = eta
-        self.__nu = nu
+        self.__theta = theta
+        self.__my = my
+        self.__ny = ny
+        self.__rho = rho
+        self.__xi = xi
         self.__psi = psi
         self.__sigma = sigma
+        self.__tau = tau
+        self.__kappa = kappa
 
     def ode_system(self, t, params):
         """
@@ -79,24 +108,38 @@ class SEIQRDModel:
         :param params:
         :return: ODE system
         """
-        S, E_nt, E_tr, I_asym, I_sym, I_sev, Q_asym, Q_sym, Q_sev, R, D = params.reshape((11, self.__D, self.__K))
+        M, S, V, E_nt, E_tr, I_asym, I_sym, I_sev, Q_asym, Q_sym, Q_sev, R, D = params.reshape((13, self.__D, self.__K))
+
+        # M
+        dMdt = np.array(
+            [np.array(
+                [self.__theta[d, k] * self.__N_total[d] - self.__my[d, k] * M[d, k]
+                 for k in range(self.__K)])
+             for d in range(self.__D)])
 
         # S
         dSdt = np.array(
             [np.array(
-                [-np.sum([self.__beta_asym[d, l, k] * I_asym[d, l] + self.__beta_sym[d, l, k] * I_sym[d, l]
-                          + self.__beta_sev[d, l, k] * I_sev[d, l] for l in range(self.__K)]) * S[d, k] / self.__N[d, k]
+                [self.__my[d, k] * M[d, k] + self.__ny[d, k] * V[d, k] + self.__rho[d, k] * R[d, k]
+                 - np.sum([self.__beta_asym[d, l, k] * I_asym[d, l] + self.__beta_sym[d, l, k] * I_sym[d, l]
+                           + self.__beta_sev[d, l, k] * I_sev[d, l] for l in range(self.__K)]) * S[d, k] / self.__N[d, k]
+                 for k in range(self.__K)])
+                for d in range(self.__D)])
+
+        # V
+        dVdt = np.array(
+            [np.array(
+                [self.__kappa[d, k] * S[d, k] - self.__ny[d, k] * V[d, k]
                  for k in range(self.__K)])
                 for d in range(self.__D)])
 
         # E_nt
         dEntdt = np.array(
             [np.array(
-                [np.sum([self.__beta_asym[d, l, k] * I_asym[d, l] for l in range(self.__K)]) * S[
-                    d, k]  / self.__N[d, k]
+                [np.sum([self.__beta_asym[d, l, k] * I_asym[d, l] for l in range(self.__K)]) * S[d, k] / self.__N[d, k]
                  + np.sum([self.__beta_sym[d, l, k] * (1 - self.__psi[d, l] * self.__psi[d, k]) * I_sym[d, l]
                            + self.__beta_sev[d, l, k] * (1 - self.__psi[d, l] * self.__psi[d, k]) * I_sev[d, l]
-                           for l in range(self.__K)]) * S[d, k]  / self.__N[d, k]
+                           for l in range(self.__K)]) * S[d, k] / self.__N[d, k]
                  - self.__epsilon[d, k] * E_nt[d, k]
                  for k in range(self.__K)])
                 for d in range(self.__D)])
@@ -105,7 +148,7 @@ class SEIQRDModel:
             [np.array(
                 [np.sum([self.__beta_sym[d, l, k] * self.__psi[d, l] * self.__psi[d, k] * I_sym[d, l]
                          + self.__beta_sev[d, l, k] * self.__psi[d, l] * self.__psi[d, k] * I_sev[d, l]
-                         for l in range(self.__K)]) * S[d, k]  / self.__N[d, k]
+                         for l in range(self.__K)]) * S[d, k] / self.__N[d, k]
                  - self.__epsilon[d, k] * E_tr[d, k]
                  for k in range(self.__K)])
                 for d in range(self.__D)])
@@ -114,20 +157,32 @@ class SEIQRDModel:
         dIasymdt = np.array(
             [np.array(
                 [self.__eta[d, k] * self.__epsilon[d, k] * E_nt[d, k]
-                 - self.__gamma_asym[d, k] * I_asym[d, k] for k in range(self.__K)])
+                 - self.__gamma_asym[d, k] * I_asym[d, k]
+                 - self.__gamma_asym_sym[d, k] * I_asym[d, k]
+                 - self.__gamma_asym_sev[d, k] * I_asym[d, k]
+                 - self.__gamma_asym_q[d, k] * I_asym[d, k]
+                 for k in range(self.__K)])
                 for d in range(self.__D)])
 
         # I_sym
         dIsymdt = np.array(
             [np.array(
-                [(1 - self.__eta[d, k]) * (1 - self.__nu[d, k]) * self.__epsilon[d, k] * E_nt[d, k]
-                 - self.__gamma_sym[d, k] * I_sym[d, k] for k in range(self.__K)])
+                [(1 - self.__eta[d, k]) * (1 - self.__xi[d, k]) * self.__epsilon[d, k] * E_nt[d, k]
+                 - self.__gamma_sym[d, k] * I_sym[d, k]
+                 + self.__gamma_asym_sym[d, k] * I_asym[d, k]
+                 - self.__gamma_sym_sev[d, k] * I_sym[d, k]
+                 + self.__gamma_sev_sym[d, k] * I_sev[d, k]
+                 for k in range(self.__K)])
                 for d in range(self.__D)])
 
         # I_sev
         dIsevdt = np.array(
             [np.array(
-                [(1 - self.__eta[d, k]) * self.__nu[d, k] * self.__epsilon[d, k] * E_nt[d, k]
+                [(1 - self.__eta[d, k]) * self.__xi[d, k] * self.__epsilon[d, k] * E_nt[d, k]
+                 + self.__gamma_asym_sev[d, k] * I_asym[d, k]
+                 + self.__gamma_sym_sev[d, k] * I_sym[d, k]
+                 - self.__gamma_sev_sym[d, k] * I_sev[d, k]
+                 - self.__gamma_sev_q[d, k] * I_sev[d, k]
                  - ((1 - self.__calc_sigma(d, k, I_sev[d, k], Q_sev[d, k])) * self.__gamma_sev_r[d, k]
                     + self.__calc_sigma(d, k, I_sev[d, k], Q_sev[d, k]) * self.__gamma_sev_d[d, k]) * I_sev[d, k]
                  for k in range(self.__K)])
@@ -137,20 +192,31 @@ class SEIQRDModel:
         dQasymdt = np.array(
             [np.array(
                 [self.__eta[d, k] * self.__epsilon[d, k] * E_tr[d, k]
-                 - self.__gamma_asym[d, k] * Q_asym[d, k] for k in range(self.__K)])
+                 - self.__gamma_asym[d, k] * Q_asym[d, k]
+                 - self.__gamma_asym_sym[d, k] * Q_asym[d, k]
+                 - self.__gamma_asym_sev[d, k] * Q_asym[d, k]
+                 for k in range(self.__K)])
                 for d in range(self.__D)])
 
         # Q_sym
         dQsymdt = np.array(
             [np.array(
-                [(1 - self.__eta[d, k]) * (1 - self.__nu[d, k]) * self.__epsilon[d, k] * E_tr[d, k]
-                 - self.__gamma_sym[d, k] * Q_sym[d, k] for k in range(self.__K)])
+                [(1 - self.__eta[d, k]) * (1 - self.__xi[d, k]) * self.__epsilon[d, k] * E_tr[d, k]
+                 - self.__gamma_sym[d, k] * Q_sym[d, k]
+                 - self.__gamma_sym_sev[d, k] * Q_sym[d, k]
+                 + self.__gamma_asym_sym[d, k] * Q_asym[d, k]
+                 + self.__gamma_sev_sym[d, k] * Q_sev[d, k]
+                 for k in range(self.__K)])
                 for d in range(self.__D)])
 
         # Q_sev
         dQsevdt = np.array(
             [np.array(
-                [(1 - self.__eta[d, k]) * self.__nu[d, k] * self.__epsilon[d, k] * E_tr[d, k]
+                [(1 - self.__eta[d, k]) * self.__xi[d, k] * self.__epsilon[d, k] * E_tr[d, k]
+                 + self.__gamma_asym_sev[d, k] * Q_asym[d, k]
+                 + self.__gamma_sym_sev[d, k] * Q_sym[d, k]
+                 + self.__gamma_sev_q[d, k] * I_sev[d, k]
+                 - self.__gamma_sev_sym[d, k] * Q_sev[d, k]
                  - ((1 - self.__calc_sigma(d, k, I_sev[d, k], Q_sev[d, k])) * self.__gamma_sev_r[d, k]
                     + self.__calc_sigma(d, k, I_sev[d, k], Q_sev[d, k]) * self.__gamma_sev_d[d, k]) * Q_sev[d, k]
                  for k in range(self.__K)])
@@ -163,6 +229,7 @@ class SEIQRDModel:
                  + (1 - self.__calc_sigma(d, k, I_sev[d, k], Q_sev[d, k])) * self.__gamma_sev_r[d, k] * I_sev[d, k]
                  + self.__gamma_asym[d, k] * Q_asym[d, k] + self.__gamma_sym[d, k] * Q_sym[d, k]
                  + (1 - self.__calc_sigma(d, k, I_sev[d, k], Q_sev[d, k])) * self.__gamma_sev_r[d, k] * Q_sev[d, k]
+                 - self.__rho[d, k] * R[d, k]
                  for k in range(self.__K)])
                 for d in range(self.__D)])
 
@@ -175,7 +242,8 @@ class SEIQRDModel:
                 for d in range(self.__D)])
 
         return np.array(
-            [dSdt, dEntdt, dEtrdt, dIasymdt, dIsymdt, dIsevdt, dQasymdt, dQsymdt, dQsevdt, dRdt, dDdt]).ravel()
+            [dMdt, dSdt, dVdt, dEntdt, dEtrdt, dIasymdt, dIsymdt, dIsevdt, dQasymdt, dQsymdt, dQsevdt, dRdt, dDdt]
+        ).ravel()
 
     def __calc_sigma(self, d, k, I_sev_dk, Q_sev_dk):
         """
@@ -201,11 +269,12 @@ class SEIQRDModel:
         """
         sol = solve_ivp(fun=self.ode_system, t_span=[t[0], t[-1]], t_eval=t,
                         y0=np.array(
-                            [self.__S0, self.__E_tr0, self.__E_nt0, self.__I_asym0, self.__I_sym0, self.__I_sev0,
+                            [self.__M0, self.__S0, self.__V0, self.__E_tr0, self.__E_nt0,
+                             self.__I_asym0, self.__I_sym0, self.__I_sev0,
                              self.__Q_asym0, self.__Q_sym0, self.__Q_sev0, self.__R0, self.__D0]
                         ).ravel())
 
-        result = [np.array([sol.y[:, i].reshape((11, self.__D, self.__K))[j] for i in range(len(t))]) for j in
-                  range(11)]
+        result = [np.array([sol.y[:, i].reshape((13, self.__D, self.__K))[j] for i in range(len(t))]) for j in
+                  range(13)]
 
         return result
