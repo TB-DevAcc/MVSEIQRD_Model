@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.integrate import solve_ivp
+from scipy.integrate import solve_ivp, odeint, RK45, RK23, DOP853, BDF, Radau, LSODA
 
 
 class SEIQRDSModel:
@@ -9,8 +9,7 @@ class SEIQRDSModel:
                  beta_asym, beta_sym, beta_sev, gamma_asym, gamma_sym, gamma_sev, gamma_sev_r, gamma_sev_d,
                  gamma_asym_sym, gamma_asym_sev, gamma_asym_q, gamma_sym_sev, gamma_sev_sym, gamma_sev_q,
                  epsilon, my, ny, rho,
-                 eta, xi, psi, sigma, tau, kappa,
-                 theta):
+                 eta, xi, psi, sigma, tau, kappa):
         """
         Initialize SEIQRDS model
         :param D: Number of districts
@@ -55,7 +54,6 @@ class SEIQRDSModel:
         :param sigma: death rate of severely infections
         :param tau:  rate of recovered individuals who are susceptible again
         :param kappa: rate of vaccination
-        :param theta: natural birth rate
         """
         self.__D = D
         self.__K = K
@@ -91,7 +89,6 @@ class SEIQRDSModel:
         self.__gamma_sev_q = gamma_sev_q
         self.__epsilon = epsilon
         self.__eta = eta
-        self.__theta = theta
         self.__my = my
         self.__ny = ny
         self.__rho = rho
@@ -113,14 +110,15 @@ class SEIQRDSModel:
         # M
         dMdt = np.array(
             [np.array(
-                [self.__theta[d, k] * self.__N_total[d] - self.__my[d, k] * M[d, k]
+                [- self.__my[d, k] * M[d, k]
                  for k in range(self.__K)])
-             for d in range(self.__D)])
+                for d in range(self.__D)])
 
         # S
         dSdt = np.array(
             [np.array(
-                [self.__my[d, k] * M[d, k] + self.__ny[d, k] * V[d, k] + self.__rho[d, k] * R[d, k]
+                [self.__my[d, k] * M[d, k] + self.__rho[d, k] * R[d, k]
+                 + self.__ny[d, k] * V[d, k] - self.__kappa[d, k] * S[d, k]
                  - np.sum([self.__beta_asym[d, l, k] * I_asym[d, l] + self.__beta_sym[d, l, k] * I_sym[d, l]
                            + self.__beta_sev[d, l, k] * I_sev[d, l] for l in range(self.__K)]) * S[d, k] / self.__N[d, k]
                  for k in range(self.__K)])
@@ -261,7 +259,43 @@ class SEIQRDSModel:
                     I_sev_dk + Q_sev_dk) * self.__N[d, k] - (self.__N[d, k] / self.__N_total[d]) * self.__B[d]) \
                    / ((I_sev_dk + Q_sev_dk) * self.__N[d, k])
 
-    def simulate(self, t):
+    def simulate_RK45(self, t):
+        """
+        Use solve_ivp with method 'RK45'
+        """
+        return self.__simulate_ivp(t, RK45)
+
+    def simulate_RK23(self, t):
+        """
+        Use solve_ivp with method 'RK23'
+        """
+        return self.__simulate_ivp(t, RK23)
+
+    def simulate_DOP853(self, t):
+        """
+        Use solve_ivp with method 'DOP853'
+        """
+        return self.__simulate_ivp(t, DOP853)
+
+    def simulate_BDF(self, t):
+        """
+        Use solve_ivp with method 'BDF'
+        """
+        return self.__simulate_ivp(t, BDF)
+
+    def simulate_Radau(self, t):
+        """
+        Use solve_ivp with method 'Radau'
+        """
+        return self.__simulate_ivp(t, Radau)
+
+    def simulate_LSODA(self, t):
+        """
+        Use solve_ivp with method 'LSODA'
+        """
+        return self.__simulate_ivp(t, LSODA)
+
+    def __simulate_ivp(self, t, method):
         """
         Solve ODE system with solve_ivp
         :param t: timesteps
@@ -272,9 +306,26 @@ class SEIQRDSModel:
                             [self.__M0, self.__S0, self.__V0, self.__E_tr0, self.__E_nt0,
                              self.__I_asym0, self.__I_sym0, self.__I_sev0,
                              self.__Q_asym0, self.__Q_sym0, self.__Q_sev0, self.__R0, self.__D0]
-                        ).ravel())
+                        ).ravel(), method=method)
 
         result = [np.array([sol.y[:, i].reshape((13, self.__D, self.__K))[j] for i in range(len(t))]) for j in
+                  range(13)]
+
+        return result
+
+    def simulate_odeint(self, t):
+        """
+        Solve ODE system with odeint
+        :param t: timesteps
+        :return: solution of ODE system solved with scipy.odeint
+        """
+        sol = odeint(func=self.ode_system, t=t, y0=np.array(
+            [self.__M0, self.__S0, self.__V0, self.__E_tr0, self.__E_nt0,
+             self.__I_asym0, self.__I_sym0, self.__I_sev0,
+             self.__Q_asym0, self.__Q_sym0, self.__Q_sev0, self.__R0, self.__D0]
+        ).ravel(), tfirst=True)
+
+        result = [np.array([sol[i, :].reshape((13, self.__D, self.__K))[j] for i in range(len(t))]) for j in
                   range(13)]
 
         return result
