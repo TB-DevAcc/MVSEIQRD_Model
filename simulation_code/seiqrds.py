@@ -98,6 +98,94 @@ class SEIQRDSModel:
         self.__tau = tau
         self.__kappa = kappa
 
+    def __check_params(self):
+        """
+        Checks correct dimensions of parameter
+        """
+        assert self.__D > 0, "Invalid number of districts, must be greater than 0"
+        assert self.__K > 0, "Invalid number of groups, must be greater than 0"
+
+        assert self.__M0.shape[0] == self.__D, "Invalid shape of districts, should be {}".format(self.__D)
+        assert self.__M0.shape[1] == self.__K, "Invalid shape of groups, should be {}".format(self.__K)
+        assert self.__S0.shape[0] == self.__D, "Invalid shape of districts, should be {}".format(self.__D)
+        assert self.__S0.shape[1] == self.__K, "Invalid shape of groups, should be {}".format(self.__K)
+        assert self.__V0.shape[0] == self.__D, "Invalid shape of districts, should be {}".format(self.__D)
+        assert self.__V0.shape[1] == self.__K, "Invalid shape of groups, should be {}".format(self.__K)
+        assert self.__E_tr0.shape[0] == self.__D, "Invalid shape of districts, should be {}".format(self.__D)
+        assert self.__E_tr0.shape[1] == self.__K, "Invalid shape of groups, should be {}".format(self.__K)
+        assert self.__E_nt0.shape[0] == self.__D, "Invalid shape of districts, should be {}".format(self.__D)
+        assert self.__E_nt0.shape[1] == self.__K, "Invalid shape of groups, should be {}".format(self.__K)
+        assert self.__I_asym0.shape[0] == self.__D, "Invalid shape of districts, should be {}".format(self.__D)
+        assert self.__I_asym0.shape[1] == self.__K, "Invalid shape of groups, should be {}".format(self.__K)
+        assert self.__I_sym0.shape[0] == self.__D, "Invalid shape of districts, should be {}".format(self.__D)
+        assert self.__I_sym0.shape[1] == self.__K, "Invalid shape of groups, should be {}".format(self.__K)
+        assert self.__I_sev0.shape[0] == self.__D, "Invalid shape of districts, should be {}".format(self.__D)
+        assert self.__I_sev0.shape[1] == self.__K, "Invalid shape of groups, should be {}".format(self.__K)
+        assert self.__Q_asym0.shape[0] == self.__D, "Invalid shape of districts, should be {}".format(self.__D)
+        assert self.__Q_asym0.shape[1] == self.__K, "Invalid shape of groups, should be {}".format(self.__K)
+        assert self.__Q_sym0.shape[0] == self.__D, "Invalid shape of districts, should be {}".format(self.__D)
+        assert self.__Q_sym0.shape[1] == self.__K, "Invalid shape of groups, should be {}".format(self.__K)
+        assert self.__Q_sev0.shape[0] == self.__D, "Invalid shape of districts, should be {}".format(self.__D)
+        assert self.__Q_sev0.shape[1] == self.__K, "Invalid shape of groups, should be {}".format(self.__K)
+        assert self.__R0.shape[0] == self.__D, "Invalid shape of districts, should be {}".format(self.__D)
+        assert self.__R0.shape[1] == self.__K, "Invalid shape of groups, should be {}".format(self.__K)
+        assert self.__D0.shape[0] == self.__D, "Invalid shape of districts, should be {}".format(self.__D)
+        assert self.__D0.shape[1] == self.__K, "Invalid shape of groups, should be {}".format(self.__K)
+
+        assert self.__beta_asym.shape[0] == self.__D, "Invalid shape of districts, should be {}".format(self.__D)
+        assert self.__beta_asym.shape[1] == self.__K, "Invalid shape of groups, should be {}".format(self.__K)
+        assert self.__beta_asym.shape[2] == self.__K, "Invalid shape of groups, should be {}".format(self.__K)
+        assert self.__beta_sym.shape[0] == self.__D, "Invalid shape of districts, should be {}".format(self.__D)
+        assert self.__beta_sym.shape[1] == self.__K, "Invalid shape of groups, should be {}".format(self.__K)
+        assert self.__beta_sym.shape[2] == self.__K, "Invalid shape of groups, should be {}".format(self.__K)
+        assert self.__beta_sev.shape[0] == self.__D, "Invalid shape of districts, should be {}".format(self.__D)
+        assert self.__beta_sev.shape[1] == self.__K, "Invalid shape of groups, should be {}".format(self.__K)
+        assert self.__beta_sev.shape[2] == self.__K, "Invalid shape of groups, should be {}".format(self.__K)
+
+        assert self.__gamma_asym.shape[0] == self.__D, "Invalid shape of districts, should be {}".format(self.__D)
+        assert self.__gamma_asym.shape[1] == self.__K, "Invalid shape of groups, should be {}".format(self.__K)
+        assert self.__gamma_sym.shape[0] == self.__D, "Invalid shape of districts, should be {}".format(self.__D)
+        assert self.__gamma_sym.shape[1] == self.__K, "Invalid shape of groups, should be {}".format(self.__K)
+        assert self.__gamma_sev.shape[0] == self.__D, "Invalid shape of districts, should be {}".format(self.__D)
+        assert self.__gamma_sev.shape[1] == self.__K, "Invalid shape of groups, should be {}".format(self.__K)
+        assert self.__gamma_sev_r.shape[0] == self.__D, "Invalid shape of districts, should be {}".format(self.__D)
+        assert self.__gamma_sev_r.shape[1] == self.__K, "Invalid shape of groups, should be {}".format(self.__K)
+        assert self.__gamma_sev_d.shape[0] == self.__D, "Invalid shape of districts, should be {}".format(self.__D)
+        assert self.__gamma_sev_d.shape[1] == self.__K, "Invalid shape of groups, should be {}".format(self.__K)
+        assert self.__gamma_asym_sym.shape[0] == self.__D, "Invalid shape of districts, should be {}".format(self.__D)
+        assert self.__gamma_asym_sym.shape[1] == self.__K, "Invalid shape of groups, should be {}".format(self.__K)
+        assert self.__gamma_asym_sev.shape[0] == self.__D, "Invalid shape of districts, should be {}".format(self.__D)
+        assert self.__gamma_asym_sev.shape[1] == self.__K, "Invalid shape of groups, should be {}".format(self.__K)
+        assert self.__gamma_asym_q.shape[0] == self.__D, "Invalid shape of districts, should be {}".format(self.__D)
+        assert self.__gamma_asym_q.shape[1] == self.__K, "Invalid shape of groups, should be {}".format(self.__K)
+        assert self.__gamma_sym_sev.shape[0] == self.__D, "Invalid shape of districts, should be {}".format(self.__D)
+        assert self.__gamma_sym_sev.shape[1] == self.__K, "Invalid shape of groups, should be {}".format(self.__K)
+        assert self.__gamma_sev_sym.shape[0] == self.__D, "Invalid shape of districts, should be {}".format(self.__D)
+        assert self.__gamma_sev_sym.shape[1] == self.__K, "Invalid shape of groups, should be {}".format(self.__K)
+        assert self.__gamma_sev_q.shape[0] == self.__D, "Invalid shape of districts, should be {}".format(self.__D)
+        assert self.__gamma_sev_q.shape[1] == self.__K, "Invalid shape of groups, should be {}".format(self.__K)
+
+        assert self.__epsilon.shape[0] == self.__D, "Invalid shape of districts, should be {}".format(self.__D)
+        assert self.__epsilon.shape[1] == self.__K, "Invalid shape of groups, should be {}".format(self.__K)
+        assert self.__eta.shape[0] == self.__D, "Invalid shape of districts, should be {}".format(self.__D)
+        assert self.__eta.shape[1] == self.__K, "Invalid shape of groups, should be {}".format(self.__K)
+        assert self.__my.shape[0] == self.__D, "Invalid shape of districts, should be {}".format(self.__D)
+        assert self.__my.shape[1] == self.__K, "Invalid shape of groups, should be {}".format(self.__K)
+        assert self.__ny.shape[0] == self.__D, "Invalid shape of districts, should be {}".format(self.__D)
+        assert self.__ny.shape[1] == self.__K, "Invalid shape of groups, should be {}".format(self.__K)
+        assert self.__rho.shape[0] == self.__D, "Invalid shape of districts, should be {}".format(self.__D)
+        assert self.__rho.shape[1] == self.__K, "Invalid shape of groups, should be {}".format(self.__K)
+        assert self.__xi.shape[0] == self.__D, "Invalid shape of districts, should be {}".format(self.__D)
+        assert self.__xi.shape[1] == self.__K, "Invalid shape of groups, should be {}".format(self.__K)
+        assert self.__psi.shape[0] == self.__D, "Invalid shape of districts, should be {}".format(self.__D)
+        assert self.__psi.shape[1] == self.__K, "Invalid shape of groups, should be {}".format(self.__K)
+        assert self.__sigma.shape[0] == self.__D, "Invalid shape of districts, should be {}".format(self.__D)
+        assert self.__sigma.shape[1] == self.__K, "Invalid shape of groups, should be {}".format(self.__K)
+        assert self.__tau.shape[0] == self.__D, "Invalid shape of districts, should be {}".format(self.__D)
+        assert self.__tau.shape[1] == self.__K, "Invalid shape of groups, should be {}".format(self.__K)
+        assert self.__kappa.shape[0] == self.__D, "Invalid shape of districts, should be {}".format(self.__D)
+        assert self.__kappa.shape[1] == self.__K, "Invalid shape of groups, should be {}".format(self.__K)
+
     def ode_system(self, t, params):
         """
         Creates ODE system for model
@@ -106,6 +194,8 @@ class SEIQRDSModel:
         :return: ODE system
         """
         M, S, V, E_nt, E_tr, I_asym, I_sym, I_sev, Q_asym, Q_sym, Q_sev, R, D = params.reshape((13, self.__D, self.__K))
+
+        self.__check_params()
 
         # M
         dMdt = np.array(
@@ -141,6 +231,7 @@ class SEIQRDSModel:
                  - self.__epsilon[d, k] * E_nt[d, k]
                  for k in range(self.__K)])
                 for d in range(self.__D)])
+
         # E_tr
         dEtrdt = np.array(
             [np.array(
