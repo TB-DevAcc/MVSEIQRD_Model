@@ -62,13 +62,17 @@ class Simulator:
                 I_sym = self.params["I_sym"]
                 I_sev = self.params["I_sev"]
                 # TODO check numpy math and make sure it's not a shallow copy
-                I_asym = beta_asym * I_asym
-                I_sym = beta_sym * I_sym
-                I_sev = beta_sev * I_sev
-                res.append(-1 * (I_asym + I_sym + I_sev) * S)
+                factor = np.sum(
+                    np.array(
+                        [beta_asym[:, l, :] * I_asym + beta_sym[:, l, :] * I_sym + beta_sev[:, l, :] * I_sev
+                         for l in range(self.K)])
+                    , axis=2
+                ).swapaxes(0, 1)
+                res.append(-1 * factor * S)
             # TODO other classes: I
 
-        return res.sum()  # TODO sum up all classes
+        # Sum up all parts for each district and group
+        return np.array(res).sum(axis=0)  # TODO sum up all classes
 
     def _build_dMdt(self, class_simulation_type="") -> np.ndarray:
         # TODO implement
