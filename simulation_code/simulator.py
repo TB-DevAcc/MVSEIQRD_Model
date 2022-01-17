@@ -62,53 +62,217 @@ class Simulator:
                 I_sym = self.params["I_sym"]
                 I_sev = self.params["I_sev"]
                 # TODO check numpy math and make sure it's not a shallow copy
-                factor = np.sum(
+
+                # TODO choose one alternative
+                res.append(
+                    [np.array(
+                        [-np.sum(
+                            [beta_asym[j, l, k] * I_asym[j, l]
+                             + beta_sym[j, l, k] * I_sym[j, l]
+                             + beta_sev[j, l, k] * I_sev[j, l]
+                             for l in range(self.K)]
+                        ) * S[j, k] for k in range(self.K)]
+                    ) for j in range(self.J)]
+                )
+                # Alternative - [:, l, k] verschiebt Dimensionen
+                res.append(
                     np.array(
-                        [beta_asym[:, l, :] * I_asym + beta_sym[:, l, :] * I_sym + beta_sev[:, l, :] * I_sev
-                         for l in range(self.K)])
-                    , axis=2
-                ).swapaxes(0, 1)
-                res.append(-1 * factor * S)
-            # TODO other classes: I
+                        [-np.sum(
+                            [beta_asym[:, l, k] * I_asym[:, l]
+                             + beta_sym[:, l, k] * I_sym[:, l]
+                             + beta_sev[:, l, k] * I_sev[:, l]
+                             for l in range(self.K)]
+                        ) * S[:, k] for k in range(self.K)]
+                    ).swapaxes(0, 1)
+                )
 
         # Sum up all parts for each district and group
-        return np.array(res).sum(axis=0)  # TODO sum up all classes
+        return np.array(res).sum(axis=0)
 
-    def _build_dMdt(self, class_simulation_type="") -> np.ndarray:
+    def _build_dMdt(self, class_simulation_type: str = "M") -> np.ndarray:
+        # TODO implement
+        res = []
+        for cls in class_simulation_type.split():
+            if cls == "M":
+                rho_mat = self.params["rho_mat"]
+                M = self.params["M"]
+                # TODO check numpy math and make sure it's not a shallow copy
+                res.append(-1 * rho_mat * M)
+
+        # Sum up all parts for each district and group
+        return np.array(res).sum(axis=0)
+
+    def _build_dVdt(self, class_simulation_type: str = "V S") -> np.ndarray:
+        # TODO implement
+        res = []
+        for cls in class_simulation_type.split():
+            if cls == "V":
+                rho_vac = self.params["rho_vac"]
+                V = self.params["V"]
+                # TODO check numpy math and make sure it's not a shallow copy
+                res.append(-1 * rho_vac * V)
+            if cls == "S":
+                nu = self.params["nu"]
+                S = self.params["S"]
+                # TODO check numpy math and make sure it's not a shallow copy
+                res.append(nu * S)
+
+        return np.array(res).sum(axis=0)
+
+    def _build_dE_ntdt(self, class_simulation_type: str = "E2 I3") -> np.ndarray:
+        # TODO implement
+        res = []
+        for cls in class_simulation_type.split():
+            if cls == "I3":
+                S = self.params["S"]
+                beta_asym = self.params["beta_asym"]
+                I_asym = self.params["I_asym"]
+                # TODO check numpy math and make sure it's not a shallow copy
+                res.append(
+                    [np.array(
+                        [np.sum(
+                            [beta_asym[j, l, k] * I_asym[j, l] for l in range(self.K)]
+                        ) * S[j, k] for k in range(self.K)]
+                    ) for j in range(self.J)]
+                )
+
+                beta_sym = self.params["beta_sym"]
+                beta_sev = self.params["beta_sev"]
+                psi = self.params["psi"]
+                I_sym = self.params["I_sym"]
+                I_sev = self.params["I_sev"]
+                # TODO check numpy math and make sure it's not a shallow copy
+                res.append(
+                    [np.array(
+                        [-np.sum(
+                            [beta_sym[j, l, k] * (1 - psi[j, l] * psi[j, k]) * I_sym[j, l]
+                             + beta_sev[j, l, k] * (1 - psi[j, l] * psi[j, k]) * I_sev[j, l]
+                             for l in range(self.K)]
+                        ) * S[j, k] for k in range(self.K)]
+                    ) for j in range(self.J)]
+                )
+            if cls == "E2":
+                epsilon = self.params["epsilon"]
+                Ent = self.params["Ent"]
+                # TODO check numpy math and make sure it's not a shallow copy
+                res.append(-1 * epsilon * Ent)
+
+        return np.array(res).sum(axis=0)
+
+    def _build_dE_trdt(self, class_simulation_type: str = "E2 I3") -> np.ndarray:
+        # TODO implement
+        res = []
+        for cls in class_simulation_type.split():
+            if cls == "E2":
+                epsilon = self.params["epsilon"]
+                Etr = self.params["Etr"]
+                # TODO check numpy math and make sure it's not a shallow copy
+                res.append(-1 * epsilon * Etr)
+            if cls == "I3":
+                beta_sym = self.params["beta_sym"]
+                beta_sev = self.params["beta_sev"]
+                psi = self.params["psi"]
+                I_sym = self.params["I_sym"]
+                I_sev = self.params["I_sev"]
+                S = self.params["S"]
+                # TODO check numpy math and make sure it's not a shallow copy
+                res.append(
+                    [np.array(
+                        [np.sum(
+                            [beta_sym[j, l, k] * psi[j, l] * psi[:, k] * I_sym[j, l]
+                             + beta_sev[j, l, k] * psi[j, l] * psi[j, k] * I_sev[j, l]
+                             for l in range(self.K)]
+                        ) * S[j, k] for k in range(self.K)]
+                    ) for j in range(self.J)]
+                )
+
+        return np.array(res).sum(axis=0)
+
+    def _build_dI_asymdt(self, class_simulation_type: str = "E2 I3") -> np.ndarray:
+        # TODO implement
+        res = []
+        for cls in class_simulation_type.split():
+            if cls == "E2":
+                epsilon = self.params["epsilon"]
+                Ent = self.params["Ent"]
+                # TODO check numpy math and make sure it's not a shallow copy
+                res.append(epsilon * Ent)
+            if cls == "I3":
+                gamma_asym = self.params["gamma_asym"]
+                my_sym = self.params["my_sym"]
+                my_sev = self.params["my_sev"]
+                tau_asym = self.params["tau_asym"]
+                I_asym = self.params["I_asym"]
+                # TODO check numpy math and make sure it's not a shallow copy
+                res.append(-1 * (gamma_asym * I_asym + my_sym * I_asym + my_sev * I_asym + tau_asym * I_asym))
+
+        return np.array(res).sum(axis=0)
+
+    def _build_dI_symdt(self, class_simulation_type: str = "I3") -> np.ndarray:
+        # TODO implement
+        res = []
+        for cls in class_simulation_type.split():
+            if cls == "I3":
+                my_sym = self.params["my_sym"]
+                my_sev = self.params["my_sev"]
+                gamma_sym = self.params["gamma_sym"]
+                tau_sym = self.params["tau_sym"]
+                I_asym = self.params["I_asym"]
+                I_sym = self.params["I_sym"]
+                I_sev = self.params["I_sev"]
+                # TODO check numpy math and make sure it's not a shallow copy
+                res.append(my_sym * I_asym + my_sym * I_sev - (gamma_sym * I_sym + my_sev * I_sym + tau_sym * I_sym))
+
+        return np.array(res).sum(axis=0)
+
+    def _build_dI_sevdt(self, class_simulation_type: str = "I3") -> np.ndarray:
         # TODO implement
         ...
 
-    def _build_dVdt(self, class_simulation_type="") -> np.ndarray:
+    def _build_dQ_asymdt(self, class_simulation_type: str = "E2 I3 Q3") -> np.ndarray:
         # TODO implement
-        ...
+        res = []
+        for cls in class_simulation_type.split():
+            if cls == "E2":
+                epsilon = self.params["epsilon"]
+                Etr = self.params["Etr"]
+                # TODO check numpy math and make sure it's not a shallow copy
+                res.append(epsilon * Etr)
+            if cls == "I3":
+                tau_asym = self.params["tau_asym"]
+                I_asym = self.params["I_asym"]
+                # TODO check numpy math and make sure it's not a shallow copy
+                res.append(tau_asym * I_asym)
+            if cls == "Q3":
+                gamma_asym = self.params["gamma_asym"]
+                my_sym = self.params["my_sym"]
+                my_sev = self.params["my_sev"]
+                Q_asym = self.params["Q_asym"]
+                # TODO check numpy math and make sure it's not a shallow copy
+                res.append(-1 * (gamma_asym * Q_asym + my_sym * Q_asym + my_sev * Q_asym))
 
-    def _build_dE_ntdt(self, class_simulation_type="") -> np.ndarray:
-        # TODO implement
-        ...
+        return np.array(res).sum(axis=0)
 
-    def _build_dE_trdt(self, class_simulation_type="") -> np.ndarray:
+    def _build_dQ_symdt(self, class_simulation_type: str = "I3 Q3") -> np.ndarray:
         # TODO implement
-        ...
+        res = []
+        for cls in class_simulation_type.split():
+            if cls == "I3":
+                tau_sym = self.params["tau_sym"]
+                I_sym = self.params["I_sym"]
+                # TODO check numpy math and make sure it's not a shallow copy
+                res.append(tau_sym * I_sym)
+            if cls == "Q3":
+                my_sym = self.params["my_sym"]
+                gamma_sym = self.params["gamma_sym"]
+                my_sev = self.params["my_sev"]
+                Q_asym = self.params["Q_asym"]
+                Q_sev = self.params["Q_sev"]
+                Q_sym = self.params["Q_sym"]
+                # TODO check numpy math and make sure it's not a shallow copy
+                res.append(my_sym * Q_asym + my_sym * Q_sev - (gamma_sym * Q_sym + my_sev * Q_sym))
 
-    def _build_dI_asymdt(self, class_simulation_type="") -> np.ndarray:
-        # TODO implement
-        ...
-
-    def _build_dI_symdt(self, class_simulation_type="") -> np.ndarray:
-        # TODO implement
-        ...
-
-    def _build_dI_sevdt(self, class_simulation_type="") -> np.ndarray:
-        # TODO implement
-        ...
-
-    def _build_dQ_asymdt(self, class_simulation_type="") -> np.ndarray:
-        # TODO implement
-        ...
-
-    def _build_dQ_symdt(self, class_simulation_type="") -> np.ndarray:
-        # TODO implement
-        ...
+        return np.array(res).sum(axis=0)
 
     def _build_dQ_sevdt(self, class_simulation_type="") -> np.ndarray:
         # TODO implement
@@ -118,9 +282,34 @@ class Simulator:
         # TODO implement
         ...
 
-    def _build_dDdt(self, class_simulation_type="") -> np.ndarray:
+    def _build_dDdt(self, class_simulation_type: str = "I3 Q3") -> np.ndarray:
         # TODO implement
-        ...
+        res = []
+        for cls in class_simulation_type.split():
+            if cls == "I3":
+                gamma_sev_d = self.params["gamma_sev_d"]
+                I_sev = self.params["I_sev"]
+                Q_sev = self.params["Q_sev"]
+                # TODO check numpy math and make sure it's not a shallow copy
+                res.append(
+                    [np.array(
+                        [self._calc_sigma(j, k, I_sev[j, k], Q_sev[j, k] * gamma_sev_d[j, k] * I_sev[j, k])
+                         for k in range(self.K)]
+                    ) for j in range(self.J)]
+                )
+            if cls == "Q3":
+                gamma_sev_d = self.params["gamma_sev_d"]
+                I_sev = self.params["I_sev"]
+                Q_sev = self.params["Q_sev"]
+                # TODO check numpy math and make sure it's not a shallow copy
+                res.append(
+                    [np.array(
+                        [self._calc_sigma(j, k, I_sev[j, k], Q_sev[j, k] * gamma_sev_d[j, k] * Q_sev[j, k])
+                         for k in range(self.K)]
+                    ) for j in range(self.J)]
+                )
+
+        return np.array(res).sum(axis=0)
 
     def _build_ode_system(self, simulation_type: str) -> list:
         """
@@ -186,10 +375,10 @@ class Simulator:
             return self._sigma[d, k]
         else:
             return (
-                self._sigma[d, k] * (self._N[d, k] / self._N_total[d]) * self._B[d]
-                + (I_sev_dk + Q_sev_dk) * self._N[d, k]
-                - (self._N[d, k] / self._N_total[d]) * self._B[d]
-            ) / ((I_sev_dk + Q_sev_dk) * self._N[d, k])
+                           self._sigma[d, k] * (self._N[d, k] / self._N_total[d]) * self._B[d]
+                           + (I_sev_dk + Q_sev_dk) * self._N[d, k]
+                           - (self._N[d, k] / self._N_total[d]) * self._B[d]
+                   ) / ((I_sev_dk + Q_sev_dk) * self._N[d, k])
 
     def simulate_RK45(self, t):
         """
