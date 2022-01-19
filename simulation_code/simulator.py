@@ -1,5 +1,6 @@
 import numpy as np
-from scipy.integrate import BDF, DOP853, LSODA, RK23, RK45, Radau, odeint, solve_ivp
+import scipy
+from scipy.integrate import DOP853, RK23, RK45, odeint, solve_ivp
 
 
 class Simulator:
@@ -27,11 +28,15 @@ class Simulator:
             New parameters
         """
         self.params = params
+        self.simulation_type = simulation_type
         # TODO make sure attribute error doesn't crash this
         self.J = params["J"]
         self.K = params["K"]
-        self.ode_list = self._build_ode_system(simulation_type)
-        return self._run_ode_system(self.ode_list, params)
+        self.N = params["N"]
+        self.N_total = params["N_total"]
+        self.B = params["B"]
+        self.sigma = params["sigma"]
+        return self._run_ode_system(params)
 
     def _build_dSdt(self, class_simulation_type: str = "M V R I3") -> np.ndarray:
         res = []
@@ -77,16 +82,16 @@ class Simulator:
                     ) for j in range(self.J)]
                 )
                 # Alternative - [:, l, k] verschiebt Dimensionen
-                res.append(
-                    np.array(
-                        [-np.sum(
-                            [beta_asym[:, l, k] * I_asym[:, l]
-                             + beta_sym[:, l, k] * I_sym[:, l]
-                             + beta_sev[:, l, k] * I_sev[:, l]
-                             for l in range(self.K)]
-                        ) * S[:, k] for k in range(self.K)]
-                    ).swapaxes(0, 1)
-                )
+                # res.append(
+                #     np.array(
+                #         [-np.sum(
+                #             [beta_asym[:, l, k] * I_asym[:, l]
+                #              + beta_sym[:, l, k] * I_sym[:, l]
+                #              + beta_sev[:, l, k] * I_sev[:, l]
+                #              for l in range(self.K)]
+                #         ) * S[:, k] for k in range(self.K)]
+                #     ).swapaxes(0, 1)
+                # )
 
         return np.array(res).sum(axis=0)
 
@@ -409,7 +414,7 @@ class Simulator:
 
         return np.array(res).sum(axis=0)
 
-    def _build_ode_system(self, simulation_type: str) -> list:
+    def _build_ode_system(self, t, params) -> list:
         """
         builds an ODE system for a given simulation type.
         E.g. simulation_type = "SI" -> [dSdt = ..., dIdt = ...]
@@ -420,11 +425,11 @@ class Simulator:
             List of Ordinary differential equations that build a system
         """
 
-        if simulation_type == "I3 S E2 I3 Q3 R I" or simulation_type == "full":
-            return [
+        if self.simulation_type == "I3 S E2 I3 Q3 R I" or self.simulation_type == "full":
+            return np.array([
                 self._build_dMdt(),
                 self._build_dVdt(),
-                self._build_dSdT(),
+                self._build_dSdt(),
                 self._build_dE_ntdt(),
                 self._build_dE_trdt(),
                 self._build_dI_asymdt(),
@@ -435,11 +440,10 @@ class Simulator:
                 self._build_dQ_sevdt(),
                 self._build_dRdt(),
                 self._build_dDdt(),
-            ]
-
+            ]).ravel()
         # TODO implement different simulation types
 
-    def _run_ode_system(self, ode_list, params) -> dict:
+    def _run_ode_system(self, params) -> dict:
         """
         Creates ODE system for epidemiological model
 
@@ -456,7 +460,7 @@ class Simulator:
             New parameters
         """
         # TODO run system
-        ...
+        return self.simulate_RK45(params["t"], params)
 
     def _calc_sigma(self, d, k, I_sev_dk, Q_sev_dk):
         """
@@ -467,61 +471,55 @@ class Simulator:
         :param Q_sev_dk: current value of Q_sev for district d in group k
         :return: value of sigma for current situation
         """
-        if (I_sev_dk + Q_sev_dk) * self._N[d, k] <= (self._N[d, k] / self._N_total[d]) * self._B[
-            d
-        ]:
-            return self._sigma[d, k]
+        if (I_sev_dk + Q_sev_dk) * self.N[d, k] <= (self.N[d, k] / self.N_total[d]) * self.B[d]:
+            return self.sigma[d, k]
         else:
             return (
-                           self._sigma[d, k] * (self._N[d, k] / self._N_total[d]) * self._B[d]
-                           + (I_sev_dk + Q_sev_dk) * self._N[d, k]
-                           - (self._N[d, k] / self._N_total[d]) * self._B[d]
-                   ) / ((I_sev_dk + Q_sev_dk) * self._N[d, k])
+                   self.sigma[d, k] * (self.N[d, k] / self.N_total[d]) * self.B[d]
+                   + (I_sev_dk + Q_sev_dk) * self.N[d, k]
+                   - (self.N[d, k] / self.N_total[d]) * self.B[d]
+                   ) / ((I_sev_dk + Q_sev_dk) * self.N[d, k])
 
-    def simulate_RK45(self, t):
+    def simulate_RK45(self, t, params):
         """
         Use solve_ivp with method 'RK45'
         """
-        return self._simulate_ivp(t, RK45)
+        return self._simulate_ivp(t, params, scipy.integrate.RK45)
 
-    def simulate_RK23(self, t):
+    def simulate_RK23(self, t, params):
         """
         Use solve_ivp with method 'RK23'
         """
-        return self._simulate_ivp(t, RK23)
+        return self._simulate_ivp(t, params, scipy.integrate.RK23)
 
-    def simulate_DOP853(self, t):
+    def simulate_DOP853(self, t, params):
         """
         Use solve_ivp with method 'DOP853'
         """
-        return self._simulate_ivp(t, DOP853)
+        return self._simulate_ivp(t, params, scipy.integrate.DOP853)
 
-    def simulate_BDF(self, t):
-        """
-        Use solve_ivp with method 'BDF'
-        """
-        return self._simulate_ivp(t, BDF)
-
-    def simulate_Radau(self, t):
-        """
-        Use solve_ivp with method 'Radau'
-        """
-        return self._simulate_ivp(t, Radau)
-
-    def simulate_LSODA(self, t):
-        """
-        Use solve_ivp with method 'LSODA'
-        """
-        return self._simulate_ivp(t, LSODA)
-
-    def _simulate_ivp(self, ode_system, t, method):
+    def _simulate_ivp(self, t, params, method):
         """
         Solve ODE system with solve_ivp
         :param t: timesteps
         :return: solution of ODE system solved with scipy.solve_ivp
         """
+        self._M0 = params["M"]
+        self._S0 = params["S"]
+        self._V0 = params["V"]
+        self._E_tr0 = params["Etr"]
+        self._E_nt0 = params["Ent"]
+        self._I_asym0 =params["I_asym"]
+        self._I_sym0 = params["I_sym"]
+        self._I_sev0 = params["I_sev"]
+        self._Q_asym0 = params["Q_asym"]
+        self._Q_sym0 = params["Q_sym"]
+        self._Q_sev0 = params["Q_sev"]
+        self._R0 = params["R"]
+        self._D0 = params["D"]
+
         sol = solve_ivp(
-            fun=ode_system,
+            fun=self._build_ode_system,
             t_span=[t[0], t[-1]],
             t_eval=t,
             y0=np.array(
@@ -545,7 +543,7 @@ class Simulator:
         )
 
         result = [
-            np.array([sol.y[:, i].reshape((13, self._D, self._K))[j] for i in range(len(t))])
+            np.array([sol.y[:, i].reshape((13, self.J, self.K))[j] for i in range(len(t))])
             for j in range(13)
         ]
 
@@ -581,7 +579,7 @@ class Simulator:
         )
 
         result = [
-            np.array([sol[i, :].reshape((13, self._D, self._K))[j] for i in range(len(t))])
+            np.array([sol[i, :].reshape((13, self.J, self.K))[j] for i in range(len(t))])
             for j in range(13)
         ]
 
