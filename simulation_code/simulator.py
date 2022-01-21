@@ -96,7 +96,6 @@ class Simulator:
         return np.array(res).sum(axis=0)
 
     def _build_dMdt(self, class_simulation_type: str = "M") -> np.ndarray:
-        # TODO implement
         res = []
         for cls in class_simulation_type.split():
             if cls == "M":
@@ -108,7 +107,6 @@ class Simulator:
         return np.array(res).sum(axis=0)
 
     def _build_dVdt(self, class_simulation_type: str = "V S") -> np.ndarray:
-        # TODO implement
         res = []
         for cls in class_simulation_type.split():
             if cls == "V":
@@ -125,7 +123,6 @@ class Simulator:
         return np.array(res).sum(axis=0)
 
     def _build_dE_ntdt(self, class_simulation_type: str = "E2 I3") -> np.ndarray:
-        # TODO implement
         res = []
         for cls in class_simulation_type.split():
             if cls == "I3":
@@ -165,7 +162,6 @@ class Simulator:
         return np.array(res).sum(axis=0)
 
     def _build_dE_trdt(self, class_simulation_type: str = "E2 I3") -> np.ndarray:
-        # TODO implement
         res = []
         for cls in class_simulation_type.split():
             if cls == "I3":
@@ -194,7 +190,6 @@ class Simulator:
         return np.array(res).sum(axis=0)
 
     def _build_dI_asymdt(self, class_simulation_type: str = "E2 I3") -> np.ndarray:
-        # TODO implement
         res = []
         for cls in class_simulation_type.split():
             if cls == "E2":
@@ -214,7 +209,6 @@ class Simulator:
         return np.array(res).sum(axis=0)
 
     def _build_dI_symdt(self, class_simulation_type: str = "I3") -> np.ndarray:
-        # TODO implement
         res = []
         for cls in class_simulation_type.split():
             if cls == "I3":
@@ -231,7 +225,6 @@ class Simulator:
         return np.array(res).sum(axis=0)
 
     def _build_dI_sevdt(self, class_simulation_type: str = "I3") -> np.ndarray:
-        # TODO implement
         res = []
         for cls in class_simulation_type.split():
             if cls == "I3":
@@ -260,7 +253,6 @@ class Simulator:
         return np.array(res).sum(axis=0)
 
     def _build_dQ_asymdt(self, class_simulation_type: str = "E2 I3 Q3") -> np.ndarray:
-        # TODO implement
         res = []
         for cls in class_simulation_type.split():
             if cls == "E2":
@@ -284,7 +276,6 @@ class Simulator:
         return np.array(res).sum(axis=0)
 
     def _build_dQ_symdt(self, class_simulation_type: str = "I3 Q3") -> np.ndarray:
-        # TODO implement
         res = []
         for cls in class_simulation_type.split():
             if cls == "I3":
@@ -305,7 +296,6 @@ class Simulator:
         return np.array(res).sum(axis=0)
 
     def _build_dQ_sevdt(self, class_simulation_type: str = "I3 Q3") -> np.ndarray:
-        # TODO implement
         res = []
         for cls in class_simulation_type.split():
             if cls == "I3":
@@ -338,7 +328,6 @@ class Simulator:
         return np.array(res).sum(axis=0)
 
     def _build_dRdt(self, class_simulation_type: str = "I3 Q3 R") -> np.ndarray:
-        # TODO implement
         res = []
         for cls in class_simulation_type.split():
             if cls == "I3":
@@ -386,7 +375,6 @@ class Simulator:
         return np.array(res).sum(axis=0)
 
     def _build_dDdt(self, class_simulation_type: str = "I3 Q3") -> np.ndarray:
-        # TODO implement
         res = []
         for cls in class_simulation_type.split():
             if cls == "I3":
@@ -396,7 +384,7 @@ class Simulator:
                 # TODO check numpy math and make sure it's not a shallow copy
                 res.append(
                     [np.array(
-                        [self._calc_sigma(j, k, I_sev[j, k], Q_sev[j, k] * gamma_sev_d[j, k] * I_sev[j, k])
+                        [self._calc_sigma(j, k, I_sev[j, k], Q_sev[j, k]) * gamma_sev_d[j, k] * I_sev[j, k]
                          for k in range(self.K)]
                     ) for j in range(self.J)]
                 )
@@ -407,7 +395,7 @@ class Simulator:
                 # TODO check numpy math and make sure it's not a shallow copy
                 res.append(
                     [np.array(
-                        [self._calc_sigma(j, k, I_sev[j, k], Q_sev[j, k] * gamma_sev_d[j, k] * Q_sev[j, k])
+                        [self._calc_sigma(j, k, I_sev[j, k], Q_sev[j, k]) * gamma_sev_d[j, k] * Q_sev[j, k]
                          for k in range(self.K)]
                     ) for j in range(self.J)]
                 )
