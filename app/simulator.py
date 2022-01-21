@@ -8,8 +8,8 @@ class Simulator:
         self.ode_list = None
         self.simulation_type = None
         self.params = None
-        self.J = 0
-        self.K = 0
+        self.J = 1
+        self.K = 1
 
     def run(self, params, simulation_type) -> dict:
         """
@@ -72,14 +72,23 @@ class Simulator:
 
                 # TODO choose one alternative and delete the other
                 res.append(
-                    [np.array(
-                        [-np.sum(
-                            [beta_asym[j, l, k] * I_asym[j, l]
-                             + beta_sym[j, l, k] * I_sym[j, l]
-                             + beta_sev[j, l, k] * I_sev[j, l]
-                             for l in range(self.K)]
-                        ) * S[j, k] for k in range(self.K)]
-                    ) for j in range(self.J)]
+                    [
+                        np.array(
+                            [
+                                -np.sum(
+                                    [
+                                        beta_asym[j, l, k] * I_asym[j, l]
+                                        + beta_sym[j, l, k] * I_sym[j, l]
+                                        + beta_sev[j, l, k] * I_sev[j, l]
+                                        for l in range(self.K)
+                                    ]
+                                )
+                                * S[j, k]
+                                for k in range(self.K)
+                            ]
+                        )
+                        for j in range(self.J)
+                    ]
                 )
                 # Alternative - [:, l, k] verschiebt Dimensionen
                 # res.append(
@@ -134,11 +143,16 @@ class Simulator:
                 I_asym = self.params["I_asym"]
                 # TODO check numpy math and make sure it's not a shallow copy
                 res.append(
-                    [np.array(
-                        [np.sum(
-                            [beta_asym[j, l, k] * I_asym[j, l] for l in range(self.K)]
-                        ) * S[j, k] for k in range(self.K)]
-                    ) for j in range(self.J)]
+                    [
+                        np.array(
+                            [
+                                np.sum([beta_asym[j, l, k] * I_asym[j, l] for l in range(self.K)])
+                                * S[j, k]
+                                for k in range(self.K)
+                            ]
+                        )
+                        for j in range(self.J)
+                    ]
                 )
 
                 beta_sym = self.params["beta_sym"]
@@ -148,13 +162,26 @@ class Simulator:
                 I_sev = self.params["I_sev"]
                 # TODO check numpy math and make sure it's not a shallow copy
                 res.append(
-                    [np.array(
-                        [np.sum(
-                            [beta_sym[j, l, k] * (1 - psi[j, l] * psi[j, k]) * I_sym[j, l]
-                             + beta_sev[j, l, k] * (1 - psi[j, l] * psi[j, k]) * I_sev[j, l]
-                             for l in range(self.K)]
-                        ) * S[j, k] for k in range(self.K)]
-                    ) for j in range(self.J)]
+                    [
+                        np.array(
+                            [
+                                np.sum(
+                                    [
+                                        beta_sym[j, l, k]
+                                        * (1 - psi[j, l] * psi[j, k])
+                                        * I_sym[j, l]
+                                        + beta_sev[j, l, k]
+                                        * (1 - psi[j, l] * psi[j, k])
+                                        * I_sev[j, l]
+                                        for l in range(self.K)
+                                    ]
+                                )
+                                * S[j, k]
+                                for k in range(self.K)
+                            ]
+                        )
+                        for j in range(self.J)
+                    ]
                 )
             if cls == "E2":
                 epsilon = self.params["epsilon"]
@@ -177,13 +204,22 @@ class Simulator:
                 S = self.params["S"]
                 # TODO check numpy math and make sure it's not a shallow copy
                 res.append(
-                    [np.array(
-                        [np.sum(
-                            [beta_sym[j, l, k] * psi[j, l] * psi[j, k] * I_sym[j, l]
-                             + beta_sev[j, l, k] * psi[j, l] * psi[j, k] * I_sev[j, l]
-                             for l in range(self.K)]
-                        ) * S[j, k] for k in range(self.K)]
-                    ) for j in range(self.J)]
+                    [
+                        np.array(
+                            [
+                                np.sum(
+                                    [
+                                        beta_sym[j, l, k] * psi[j, l] * psi[j, k] * I_sym[j, l]
+                                        + beta_sev[j, l, k] * psi[j, l] * psi[j, k] * I_sev[j, l]
+                                        for l in range(self.K)
+                                    ]
+                                )
+                                * S[j, k]
+                                for k in range(self.K)
+                            ]
+                        )
+                        for j in range(self.J)
+                    ]
                 )
             if cls == "E2":
                 epsilon = self.params["epsilon"]
@@ -209,7 +245,10 @@ class Simulator:
                 tau_asym = self.params["tau_asym"]
                 I_asym = self.params["I_asym"]
                 # TODO check numpy math and make sure it's not a shallow copy
-                res.append(-1 * (gamma_asym * I_asym + my_sym * I_asym + my_sev * I_asym + tau_asym * I_asym))
+                res.append(
+                    -1
+                    * (gamma_asym * I_asym + my_sym * I_asym + my_sev * I_asym + tau_asym * I_asym)
+                )
 
         return np.array(res).sum(axis=0)
 
@@ -226,7 +265,11 @@ class Simulator:
                 I_sym = self.params["I_sym"]
                 I_sev = self.params["I_sev"]
                 # TODO check numpy math and make sure it's not a shallow copy
-                res.append(my_sym * I_asym + my_sym * I_sev - (gamma_sym * I_sym + my_sev * I_sym + tau_sym * I_sym))
+                res.append(
+                    my_sym * I_asym
+                    + my_sym * I_sev
+                    - (gamma_sym * I_sym + my_sev * I_sym + tau_sym * I_sym)
+                )
 
         return np.array(res).sum(axis=0)
 
@@ -246,14 +289,27 @@ class Simulator:
                 Q_sev = self.params["Q_sev"]
                 # TODO check numpy math and make sure it's not a shallow copy
                 res.append(
-                    my_sev * I_asym + my_sev * I_sym
-                    - 1 * (
-                            [np.array(
-                                [((1 - self._calc_sigma(j, k, I_sev[j, k], Q_sev[j, k])) * gamma_sev_r[j, k]
-                                  + self._calc_sigma(j, k, I_sev[j, k], Q_sev[j, k]) * gamma_sev_d[j, k])
-                                 * I_sev[j, k] for k in range(self.K)]
-                            ) for j in range(self.J)]
-                            + my_sym * I_sev + tau_sev * I_sev
+                    my_sev * I_asym
+                    + my_sev * I_sym
+                    - 1
+                    * (
+                        [
+                            np.array(
+                                [
+                                    (
+                                        (1 - self._calc_sigma(j, k, I_sev[j, k], Q_sev[j, k]))
+                                        * gamma_sev_r[j, k]
+                                        + self._calc_sigma(j, k, I_sev[j, k], Q_sev[j, k])
+                                        * gamma_sev_d[j, k]
+                                    )
+                                    * I_sev[j, k]
+                                    for k in range(self.K)
+                                ]
+                            )
+                            for j in range(self.J)
+                        ]
+                        + my_sym * I_sev
+                        + tau_sev * I_sev
                     )
                 )
 
@@ -324,14 +380,27 @@ class Simulator:
                 I_sev = self.params["I_sev"]
                 # TODO check numpy math and make sure it's not a shallow copy
                 res.append(
-                    my_sev * Q_asym + my_sev * Q_sym
-                    - 1 * (
-                            [np.array(
-                                [((1 - self._calc_sigma(j, k, I_sev[j, k], Q_sev[j, k])) * gamma_sev_r[j, k]
-                                  + self._calc_sigma(j, k, I_sev[j, k], Q_sev[j, k] * gamma_sev_d[j, k]))
-                                 * Q_sev[j, k] for k in range(self.K)]
-                            ) for j in range(self.J)]
-                            + my_sym * Q_sev
+                    my_sev * Q_asym
+                    + my_sev * Q_sym
+                    - 1
+                    * (
+                        [
+                            np.array(
+                                [
+                                    (
+                                        (1 - self._calc_sigma(j, k, I_sev[j, k], Q_sev[j, k]))
+                                        * gamma_sev_r[j, k]
+                                        + self._calc_sigma(
+                                            j, k, I_sev[j, k], Q_sev[j, k] * gamma_sev_d[j, k]
+                                        )
+                                    )
+                                    * Q_sev[j, k]
+                                    for k in range(self.K)
+                                ]
+                            )
+                            for j in range(self.J)
+                        ]
+                        + my_sym * Q_sev
                     )
                 )
 
@@ -351,13 +420,21 @@ class Simulator:
                 Q_sev = self.params["Q_sev"]
                 # TODO check numpy math and make sure it's not a shallow copy
                 res.append(
-                    gamma_asym * I_asym + gamma_sym * I_sym
+                    gamma_asym * I_asym
+                    + gamma_sym * I_sym
                     + (
-                        [np.array(
-                            [1 - self._calc_sigma(j, k, I_sev[j, k], Q_sev[j, k])
-                             for k in range(self.K)]
-                        ) for j in range(self.J)]
-                    ) * gamma_sev_r * I_sev
+                        [
+                            np.array(
+                                [
+                                    1 - self._calc_sigma(j, k, I_sev[j, k], Q_sev[j, k])
+                                    for k in range(self.K)
+                                ]
+                            )
+                            for j in range(self.J)
+                        ]
+                    )
+                    * gamma_sev_r
+                    * I_sev
                 )
             if cls == "Q3":
                 gamma_asym = self.params["gamma_asym"]
@@ -369,13 +446,21 @@ class Simulator:
                 I_sev = self.params["I_sev"]
                 # TODO check numpy math and make sure it's not a shallow copy
                 res.append(
-                    gamma_asym * Q_asym + gamma_sym * Q_sym
+                    gamma_asym * Q_asym
+                    + gamma_sym * Q_sym
                     + (
-                        [np.array(
-                            [1 - self._calc_sigma(j, k, I_sev[j, k], Q_sev[j, k])
-                             for k in range(self.K)]
-                        ) for j in range(self.J)]
-                    ) * gamma_sev_r * Q_sev
+                        [
+                            np.array(
+                                [
+                                    1 - self._calc_sigma(j, k, I_sev[j, k], Q_sev[j, k])
+                                    for k in range(self.K)
+                                ]
+                            )
+                            for j in range(self.J)
+                        ]
+                    )
+                    * gamma_sev_r
+                    * Q_sev
                 )
             if cls == "R":
                 rho_rec = self.params["rho_rec"]
@@ -395,10 +480,20 @@ class Simulator:
                 Q_sev = self.params["Q_sev"]
                 # TODO check numpy math and make sure it's not a shallow copy
                 res.append(
-                    [np.array(
-                        [self._calc_sigma(j, k, I_sev[j, k], Q_sev[j, k] * gamma_sev_d[j, k] * I_sev[j, k])
-                         for k in range(self.K)]
-                    ) for j in range(self.J)]
+                    [
+                        np.array(
+                            [
+                                self._calc_sigma(
+                                    j,
+                                    k,
+                                    I_sev[j, k],
+                                    Q_sev[j, k] * gamma_sev_d[j, k] * I_sev[j, k],
+                                )
+                                for k in range(self.K)
+                            ]
+                        )
+                        for j in range(self.J)
+                    ]
                 )
             if cls == "Q3":
                 gamma_sev_d = self.params["gamma_sev_d"]
@@ -406,10 +501,20 @@ class Simulator:
                 Q_sev = self.params["Q_sev"]
                 # TODO check numpy math and make sure it's not a shallow copy
                 res.append(
-                    [np.array(
-                        [self._calc_sigma(j, k, I_sev[j, k], Q_sev[j, k] * gamma_sev_d[j, k] * Q_sev[j, k])
-                         for k in range(self.K)]
-                    ) for j in range(self.J)]
+                    [
+                        np.array(
+                            [
+                                self._calc_sigma(
+                                    j,
+                                    k,
+                                    I_sev[j, k],
+                                    Q_sev[j, k] * gamma_sev_d[j, k] * Q_sev[j, k],
+                                )
+                                for k in range(self.K)
+                            ]
+                        )
+                        for j in range(self.J)
+                    ]
                 )
 
         return np.array(res).sum(axis=0)
@@ -426,21 +531,23 @@ class Simulator:
         """
 
         if self.simulation_type == "I3 S E2 I3 Q3 R I" or self.simulation_type == "full":
-            return np.array([
-                self._build_dMdt(),
-                self._build_dVdt(),
-                self._build_dSdt(),
-                self._build_dE_ntdt(),
-                self._build_dE_trdt(),
-                self._build_dI_asymdt(),
-                self._build_dI_symdt(),
-                self._build_dI_sevdt(),
-                self._build_dQ_asymdt(),
-                self._build_dQ_symdt(),
-                self._build_dQ_sevdt(),
-                self._build_dRdt(),
-                self._build_dDdt(),
-            ]).ravel()
+            return np.array(
+                [
+                    self._build_dMdt(),
+                    self._build_dVdt(),
+                    self._build_dSdt(),
+                    self._build_dE_ntdt(),
+                    self._build_dE_trdt(),
+                    self._build_dI_asymdt(),
+                    self._build_dI_symdt(),
+                    self._build_dI_sevdt(),
+                    self._build_dQ_asymdt(),
+                    self._build_dQ_symdt(),
+                    self._build_dQ_sevdt(),
+                    self._build_dRdt(),
+                    self._build_dDdt(),
+                ]
+            ).ravel()
         # TODO implement different simulation types
 
     def _run_ode_system(self, params) -> dict:
@@ -475,10 +582,10 @@ class Simulator:
             return self.sigma[d, k]
         else:
             return (
-                   self.sigma[d, k] * (self.N[d, k] / self.N_total[d]) * self.B[d]
-                   + (I_sev_dk + Q_sev_dk) * self.N[d, k]
-                   - (self.N[d, k] / self.N_total[d]) * self.B[d]
-                   ) / ((I_sev_dk + Q_sev_dk) * self.N[d, k])
+                self.sigma[d, k] * (self.N[d, k] / self.N_total[d]) * self.B[d]
+                + (I_sev_dk + Q_sev_dk) * self.N[d, k]
+                - (self.N[d, k] / self.N_total[d]) * self.B[d]
+            ) / ((I_sev_dk + Q_sev_dk) * self.N[d, k])
 
     def simulate_RK45(self, t, params):
         """
@@ -509,7 +616,7 @@ class Simulator:
         self._V0 = params["V"]
         self._E_tr0 = params["Etr"]
         self._E_nt0 = params["Ent"]
-        self._I_asym0 =params["I_asym"]
+        self._I_asym0 = params["I_asym"]
         self._I_sym0 = params["I_sym"]
         self._I_sev0 = params["I_sev"]
         self._Q_asym0 = params["Q_asym"]
