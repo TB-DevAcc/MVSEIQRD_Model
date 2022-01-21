@@ -1,4 +1,4 @@
-from contextlib import nullcontext
+import json
 
 
 class Controller:
@@ -70,7 +70,7 @@ class Controller:
     self._psi = None  # Tracing app usage rate
     """
 
-    def __init__(self):
+    def __init__(self, default_values_path="/data/default_values.json"):
         # Population classes
         self._M = None  # Maternity-derived immunity
 
@@ -133,6 +133,18 @@ class Controller:
 
         self._psi = None  # Tracing app usage rate
 
+        self.default_values = self._load_default_values(default_values_path)
+
+    def _load_default_start_values(self, default_values_path) -> dict:
+        try:
+            file = json.loads(default_values_path)[0]
+        except FileExistsError as fee:
+            raise fee
+        if isinstance(file, dict):
+            return file
+        else:
+            raise FileNotFoundError(f"{default_values_path} does not contain any values.")
+
     def valid_attribution(self, key, value) -> bool:
         """
         Checks if parameter value is correctly attributed within its defined domain
@@ -181,13 +193,25 @@ class Controller:
                     "Check domain definition."
                 )
 
-    def initialize_parameters(self) -> None:
+    def initialize_parameters(self, params: dict = None) -> None:
         """
-        Initializes all parameters either by default or by reading in data through a data handler
+        Initializes all parameters either by default or by reading in data 
+        (usually prepared with the data handler)
         """
         # TODO Initialize all parameters with their start _0 value;
         # make sure types are clear first under valid_attribution and then initialize within bounds
-        ...
+
+        for key in params:
+            if params[key]:
+                self.set_value(key=key, value=params[key])
+            else:
+                try:
+                    self.set_value(key=key, value=self.default_start_values[key])
+                except AttributeError as ae:
+                    raise ae(
+                        f"The attribute {key} has no default starting value. Please supply "
+                        "a value or specifify the value in the starting values config file"
+                    )
 
     def set_value(self, key, value) -> None:
         """
