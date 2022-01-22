@@ -1,0 +1,403 @@
+krs1214;name;krankenhausbetten2014;t_typ
+1001000;Flensburg, Stadt;101,9;1
+1002000;Kiel, Landeshauptstadt;93,2;5
+1003000;Lübeck, Hansestadt;80,2;5
+1004000;Neumünster, Stadt;87,4;1
+3103000;Wolfsburg, Stadt;46,7;5
+1051000;Dithmarschen;53;1
+1053000;Herzogtum Lauenburg;31,6;4
+1056000;Pinneberg;32;5
+1054000;Nordfriesland;44,9;1
+1055000;Ostholstein;90,1;1
+1057000;Plön;17,7;4
+1058000;Rendsburg-Eckernförde;40,6;1
+3101000;Braunschweig, Stadt;80,6;5
+1059000;Schleswig-Flensburg;34,1;1
+1060000;Segeberg;64,1;3
+3102000;Salzgitter, Stadt;46,8;4
+1061000;Steinburg;48,6;4
+1062000;Stormarn;48,3;3
+2000000;Hamburg, Freie und Hansestadt;65;5
+3151000;Gifhorn;26,4;1
+3152000;Göttingen;125,8;3
+3153000;Goslar;80,4;4
+3154000;Helmstedt;85;1
+3155000;Northeim;33,4;1
+3156000;Osterode am Harz;58;1
+3404000;Osnabrück, Stadt;126,5;5
+3157000;Peine;23,9;4
+3158000;Wolfenbüttel;24,7;4
+3241000;Region Hannover;62,6;5
+3405000;Wilhelmshaven, Stadt;87,8;4
+3251000;Diepholz;22,9;1
+3252000;Hameln-Pyrmont;75;4
+3254000;Hildesheim;66,8;4
+3451000;Ammerland;67,6;2
+3255000;Holzminden;29,5;1
+3256000;Nienburg (Weser);26,5;1
+3257000;Schaumburg;41,2;4
+5113000;Essen, Stadt;98,1;5
+3351000;Celle;36,8;1
+3352000;Cuxhaven;35,7;1
+3353000;Harburg;30,5;3
+5119000;Oberhausen, Stadt;69,8;5
+3354000;Lüchow-Dannenberg;22,6;1
+3355000;Lüneburg;48,1;4
+3356000;Osterholz;19;1
+5114000;Krefeld, Stadt;90,6;5
+3357000;Rotenburg (Wümme);61;1
+3358000;Heidekreis;36,1;1
+3359000;Stade;46,1;4
+3360000;Uelzen;86,9;1
+3361000;Verden;19,7;2
+3401000;Delmenhorst, Stadt;63,6;1
+3402000;Emden, Stadt;70;1
+3403000;Oldenburg (Oldenburg), Stadt;104,5;5
+3452000;Aurich;36,8;1
+3453000;Cloppenburg;30,5;1
+3454000;Emsland;55,1;2
+5116000;Mönchengladbach, Stadt;84,6;5
+3455000;Friesland;46,8;4
+3456000;Grafschaft Bentheim;44,6;1
+3457000;Leer;42,2;1
+3458000;Oldenburg;18,8;1
+3459000;Osnabrück;47,7;1
+3460000;Vechta;66,1;2
+3461000;Wesermarsch;24,6;1
+5117000;Mülheim an der Ruhr, Stadt;53,9;5
+3462000;Wittmund;29;1
+4011000;Bremen, Stadt;73,7;5
+4012000;Bremerhaven, Stadt;97,3;5
+5111000;Düsseldorf, Stadt;84,8;5
+5112000;Duisburg, Stadt;93,1;5
+5120000;Remscheid, Stadt;96;5
+5122000;Solingen, Klingenstadt;73;5
+5124000;Wuppertal, Stadt;59,9;5
+5154000;Kleve;58,9;4
+5158000;Mettmann;49,8;5
+5162000;Rhein-Kreis Neuss;46,5;5
+5166000;Viersen;48,4;5
+5170000;Wesel;54,9;5
+5314000;Bonn, Stadt;131,1;5
+5315000;Köln, Stadt;69,8;5
+5316000;Leverkusen, Stadt;67,8;5
+5334000;Städteregion Aachen;73,5;5
+5358000;Düren;70,3;4
+5362000;Rhein-Erft-Kreis;30,3;5
+5366000;Euskirchen;58,1;1
+5370000;Heinsberg;39,9;4
+5374000;Oberbergischer Kreis;58,1;4
+5378000;Rheinisch-Bergischer Kreis;41,9;5
+5382000;Rhein-Sieg-Kreis;25,9;5
+5512000;Bottrop, Stadt;60,7;5
+5513000;Gelsenkirchen, Stadt;68;5
+5515000;Münster, Stadt;123;5
+5570000;Warendorf;56;3
+5554000;Borken;52,5;3
+5558000;Coesfeld;39,6;3
+5562000;Recklinghausen;80,7;5
+5566000;Steinfurt;52,3;2
+5711000;Bielefeld, Stadt;120,3;5
+5754000;Gütersloh;34,9;3
+5758000;Herford;44,1;3
+5762000;Höxter;64,7;1
+5913000;Dortmund, Stadt;67,7;5
+5766000;Lippe;47,3;4
+5770000;Minden-Lübbecke;76,7;4
+5774000;Paderborn;59,1;3
+5911000;Bochum, Stadt;98,4;5
+5914000;Hagen, Stadt der FernUniversität;92,8;5
+5915000;Hamm, Stadt;99,3;5
+5916000;Herne, Stadt;105,1;5
+5954000;Ennepe-Ruhr-Kreis;58,7;5
+5958000;Hochsauerlandkreis;80,1;1
+5962000;Märkischer Kreis;70,8;5
+5966000;Olpe;61,7;2
+5970000;Siegen-Wittgenstein;76,4;2
+5974000;Soest;68,9;4
+5978000;Unna;68,5;5
+6411000;Darmstadt, Wissenschaftsstadt;97,6;5
+6412000;Frankfurt am Main, Stadt;84,2;5
+6413000;Offenbach am Main, Stadt;92,7;5
+6414000;Wiesbaden, Landeshauptstadt;75,9;5
+6431000;Bergstraße;39,3;3
+6432000;Darmstadt-Dieburg;18,6;3
+6433000;Groß-Gerau;39,6;5
+6434000;Hochtaunuskreis;48,8;5
+6438000;Offenbach;19,1;5
+6435000;Main-Kinzig-Kreis;41,5;3
+6436000;Main-Taunus-Kreis;29,3;5
+6437000;Odenwaldkreis;43,8;1
+7319000;Worms, kreisfreie Stadt;80,7;4
+6439000;Rheingau-Taunus-Kreis;45,1;3
+6440000;Wetteraukreis;42,1;3
+6531000;Gießen;87,4;3
+7320000;Zweibrücken, kreisfreie Stadt;64,4;1
+6532000;Lahn-Dill-Kreis;71;2
+6533000;Limburg-Weilburg;57,3;1
+6534000;Marburg-Biedenkopf;67,1;2
+8311000;Freiburg im Breisgau;101,3;5
+6535000;Vogelsbergkreis;64,5;1
+6611000;Kassel, documenta-Stadt;132,9;5
+6631000;Fulda;66,8;2
+6632000;Hersfeld-Rotenburg;81,8;2
+6633000;Kassel;40,7;2
+6634000;Schwalm-Eder-Kreis;35,8;1
+6635000;Waldeck-Frankenberg;103;1
+6636000;Werra-Meißner-Kreis;59,6;1
+7111000;Koblenz, kreisfreie Stadt;157,1;5
+7131000;Ahrweiler;71,9;1
+9163000;Rosenheim;102,2;3
+7132000;Altenkirchen (Westerwald);30;1
+7133000;Bad Kreuznach;61,5;1
+9171000;Altötting;53,1;3
+7134000;Birkenfeld;83,3;1
+7135000;Cochem-Zell;71,7;1
+7231000;Bernkastel-Wittlich;44,7;1
+7137000;Mayen-Koblenz;46,8;4
+7138000;Neuwied;84,3;4
+7314000;Ludwigshafen am Rhein, kreisfreie Stadt;123,4;5
+7140000;Rhein-Hunsrück-Kreis;43,6;1
+7141000;Rhein-Lahn-Kreis;82,9;1
+7315000;Mainz, kreisfreie Stadt;108,5;5
+7143000;Westerwaldkreis;26,8;1
+7211000;Trier, kreisfreie Stadt;156,2;5
+7316000;Neustadt an der Weinstraße, kreisfreie Stadt;80,3;4
+7317000;Pirmasens, kreisfreie Stadt;103,1;1
+7232000;Eifelkreis Bitburg-Prüm;69,4;1
+7233000;Vulkaneifel;34,4;1
+7318000;Speyer, kreisfreie Stadt;126,6;5
+7235000;Trier-Saarburg;25,5;1
+7311000;Frankenthal (Pfalz), kreisfreie Stadt;66;5
+7312000;Kaiserslautern, kreisfreie Stadt;121,5;4
+7313000;Landau in der Pfalz, kreisfreie Stadt;189,8;3
+7331000;Alzey-Worms;49,3;4
+7332000;Bad Dürkheim;38,7;4
+7333000;Donnersbergkreis;23,7;1
+7334000;Germersheim;25,3;3
+7335000;Kaiserslautern;53,2;4
+7336000;Kusel;0;1
+7337000;Südliche Weinstraße;62,5;3
+7338000;Rhein-Pfalz-Kreis;0;5
+8115000;Böblingen;29,4;5
+7339000;Mainz-Bingen;17;3
+7340000;Südwestpfalz;23,6;1
+8111000;Stuttgart;84,7;5
+8116000;Esslingen;38,8;5
+8117000;Göppingen;53,1;3
+8118000;Ludwigsburg;33,3;5
+12054000;Potsdam, Stadt;97,9;5
+8119000;Rems-Murr-Kreis;31,8;5
+8121000;Heilbronn;90,9;5
+8125000;Heilbronn;38;3
+15003000;Magdeburg, Landeshauptstadt;100,6;5
+8126000;Hohenlohekreis;26;2
+8127000;Schwäbisch Hall;36,4;2
+8128000;Main-Tauber-Kreis;86,7;2
+8135000;Heidenheim;41,7;2
+8136000;Ostalbkreis;34,2;2
+8211000;Baden-Baden;138,5;3
+8212000;Karlsruhe;91,9;5
+8215000;Karlsruhe;23,6;3
+8216000;Rastatt;25,7;3
+8221000;Heidelberg;194,4;5
+8222000;Mannheim;84,7;5
+8225000;Neckar-Odenwald-Kreis;36,6;1
+8226000;Rhein-Neckar-Kreis;27,8;5
+8231000;Pforzheim;98,8;5
+8235000;Calw;79,3;3
+8236000;Enzkreis;16,2;3
+8237000;Freudenstadt;39,6;2
+16053000;Jena, Stadt;133,5;5
+8315000;Breisgau-Hochschwarzwald;51,3;3
+8316000;Emmendingen;62,4;3
+8317000;Ortenaukreis;54,5;3
+8325000;Rottweil;61,1;2
+8326000;Schwarzwald-Baar-Kreis;60,3;3
+8327000;Tuttlingen;27;2
+9564000;Nürnberg;69,5;5
+8335000;Konstanz;59,4;3
+8336000;Lörrach;37,1;3
+8337000;Waldshut;39,9;3
+8415000;Reutlingen;40,9;3
+8416000;Tübingen;87,3;3
+8417000;Zollernalbkreis;31;2
+8421000;Ulm;125,4;5
+8425000;Alb-Donau-Kreis;22,1;2
+8426000;Biberach;46,2;2
+8435000;Bodenseekreis;35,4;3
+8436000;Ravensburg;64;2
+8437000;Sigmaringen;54;2
+9161000;Ingolstadt;97,5;5
+9162000;München, Landeshauptstadt;80,4;5
+9172000;Berchtesgadener Land;58,8;3
+9173000;Bad Tölz-Wolfratshausen;50,6;3
+9174000;Dachau;33,4;3
+9175000;Ebersberg;24,3;3
+9176000;Eichstätt;35,3;2
+9177000;Erding;30,8;3
+9178000;Freising;20,7;3
+9179000;Fürstenfeldbruck;18,1;5
+9180000;Garmisch-Partenkirchen;149,1;3
+9181000;Landsberg am Lech;40,6;3
+9182000;Miesbach;46,8;3
+9186000;Pfaffenhofen a.d.Ilm;27,3;2
+9183000;Mühldorf a.Inn;35,6;2
+9184000;München;38,5;5
+9185000;Neuburg-Schrobenhausen;47,9;2
+9362000;Regensburg;193,7;5
+9187000;Rosenheim;108,1;3
+9188000;Starnberg;99;5
+9189000;Traunstein;50,1;3
+9190000;Weilheim-Schongau;36,6;3
+9261000;Landshut;180,7;2
+9262000;Passau;151,1;2
+9263000;Straubing;94,5;2
+9363000;Weiden i.d.OPf.;170,7;1
+9271000;Deggendorf;95,3;2
+9272000;Freyung-Grafenau;52;1
+9273000;Kelheim;32,8;2
+9561000;Ansbach;215,7;2
+9274000;Landshut;12,2;2
+9275000;Passau;34,1;2
+9276000;Regen;41,2;1
+9277000;Rottal-Inn;52,2;1
+9278000;Straubing-Bogen;42,9;2
+9279000;Dingolfing-Landau;26,8;2
+9361000;Amberg;134,8;1
+9371000;Amberg-Sulzbach;20,1;1
+9372000;Cham;54,7;1
+9373000;Neumarkt i.d.OPf.;40,3;2
+9374000;Neustadt a.d.Waldnaab;19,8;1
+9375000;Regensburg;12,3;2
+9376000;Schwandorf;39,9;2
+9377000;Tirschenreuth;39,6;1
+9461000;Bamberg;140,8;3
+9462000;Bayreuth;191,6;2
+9463000;Coburg;124,2;2
+9464000;Hof;100,4;1
+9565000;Schwabach;42,6;2
+9471000;Bamberg;20,8;3
+9472000;Bayreuth;11,9;2
+9562000;Erlangen;204,7;5
+9473000;Coburg;10,7;2
+9474000;Forchheim;27,2;2
+9475000;Hof;58,7;1
+9563000;Fürth;66,7;5
+9476000;Kronach;41,5;1
+9477000;Kulmbach;68,9;1
+9478000;Lichtenfels;112,6;1
+9479000;Wunsiedel i.Fichtelgebirge;55,6;1
+9571000;Ansbach;30;2
+9572000;Erlangen-Höchstadt;8,7;3
+9573000;Fürth;0;3
+9574000;Nürnberger Land;59,1;3
+9575000;Neustadt a.d.Aisch-Bad Windsheim;46,9;1
+9576000;Roth;21,8;2
+9577000;Weißenburg-Gunzenhausen;45,4;1
+9661000;Aschaffenburg;118,5;3
+9662000;Schweinfurt;178,3;2
+9663000;Würzburg;188,1;5
+9775000;Neu-Ulm;23,2;3
+9671000;Aschaffenburg;8,8;3
+9672000;Bad Kissingen;85,5;1
+9673000;Rhön-Grabfeld;137,6;1
+9674000;Haßberge;28,5;1
+9675000;Kitzingen;27,7;2
+9676000;Miltenberg;23,4;2
+12053000;Frankfurt (Oder), Stadt;161,7;4
+9677000;Main-Spessart;52,8;2
+9678000;Schweinfurt;53;2
+9771000;Aichach-Friedberg;23,2;3
+9679000;Würzburg;8,2;2
+9761000;Augsburg;105,5;5
+9762000;Kaufbeuren;149,5;2
+9763000;Kempten (Allgäu);86,9;3
+9764000;Memmingen;129,4;2
+9772000;Augsburg;12,5;3
+9773000;Dillingen a.d.Donau;33,9;2
+9774000;Günzburg;86,4;2
+9776000;Lindau (Bodensee);62,2;3
+9777000;Ostallgäu;32,4;2
+9778000;Unterallgäu;28,8;2
+9779000;Donau-Ries;38,9;2
+9780000;Oberallgäu;33,5;3
+10041000;Regionalverband Saarbrücken;79,9;5
+10042000;Merzig-Wadern;46,7;1
+10043000;Neunkirchen;54;4
+10044000;Saarlouis;50,1;4
+10045000;Saarpfalz-Kreis;100,3;3
+16054000;Suhl, Stadt;164,9;1
+10046000;St. Wendel;26,7;1
+11000000;Berlin, Stadt;57,7;5
+12051000;Brandenburg an der Havel, Stadt;122,9;4
+12052000;Cottbus, Stadt;115,5;4
+12060000;Barnim;67,2;4
+12061000;Dahme-Spreewald;62,1;4
+16055000;Weimar, Stadt;87,4;4
+12062000;Elbe-Elster;44,3;1
+12063000;Havelland;31;4
+16056000;Eisenach, Stadt;96,5;1
+12064000;Märkisch-Oderland;35,3;4
+12065000;Oberhavel;49,9;4
+12066000;Oberspreewald-Lausitz;46;4
+12067000;Oder-Spree;76,8;4
+12068000;Ostprignitz-Ruppin;119,9;1
+12069000;Potsdam-Mittelmark;33,4;4
+12070000;Prignitz;46;1
+12071000;Spree-Neiße;45,8;4
+12072000;Teltow-Fläming;31,1;4
+14521000;Erzgebirgskreis;59,3;4
+12073000;Uckermark;62,2;4
+13003000;Rostock;73;5
+13004000;Schwerin;159,5;4
+14713000;Leipzig, Stadt;73,5;5
+13071000;Mecklenburgische Seenplatte;62,7;1
+13072000;Landkreis Rostock;38,2;1
+13073000;Vorpommern-Rügen;54,4;1
+13074000;Nordwestmecklenburg;37,8;4
+13076000;Ludwigslust-Parchim;44,4;1
+13075000;Vorpommern-Greifswald;95,8;1
+14511000;Chemnitz, Stadt;95,6;5
+14522000;Mittelsachsen;46,1;4
+14523000;Vogtlandkreis;73,1;4
+15002000;Halle (Saale), Stadt;127,7;5
+14524000;Zwickau;63,5;4
+14612000;Dresden, Stadt;68,7;5
+14625000;Bautzen;57,5;4
+14626000;Görlitz;74,5;4
+14627000;Meißen;49,5;4
+14628000;Sächsische Schweiz-Osterzgebirge;52,6;4
+14729000;Leipzig;43,6;4
+14730000;Nordsachsen;72,6;4
+15001000;Dessau-Roßlau, Stadt;114;4
+15081000;Altmarkkreis Salzwedel;50;1
+15082000;Anhalt-Bitterfeld;53,9;4
+16072000;Sonneberg;67,1;1
+15083000;Börde;37,1;1
+15084000;Burgenlandkreis;58,5;4
+15085000;Harz;74,8;1
+15086000;Jerichower Land;82,8;1
+15089000;Salzlandkreis;74,4;4
+15087000;Mansfeld-Südharz;54,9;1
+15088000;Saalekreis;34,8;4
+16052000;Gera, Stadt;101,9;4
+15090000;Stendal;90,2;1
+15091000;Wittenberg;48,2;1
+16051000;Erfurt, Stadt;80,7;5
+16061000;Eichsfeld;44,2;1
+16062000;Nordhausen;119,2;1
+16063000;Wartburgkreis;41,6;1
+16064000;Unstrut-Hainich-Kreis;116,6;1
+16065000;Kyffhäuserkreis;67;1
+16077000;Altenburger Land;65,4;4
+16066000;Schmalkalden-Meiningen;68,4;1
+16067000;Gotha;39;4
+16068000;Sömmerda;0;1
+16069000;Hildburghausen;87,1;1
+16070000;Ilm-Kreis;53;1
+16071000;Weimarer Land;136,5;4
+16073000;Saalfeld-Rudolstadt;90,3;1
+16074000;Saale-Holzland-Kreis;79,1;1
+16075000;Saale-Orla-Kreis;14,5;1
+16076000;Greiz;43,3;4
