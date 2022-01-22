@@ -471,12 +471,9 @@ class Simulator:
                     [
                         np.array(
                             [
-                                self._calc_sigma(
-                                    j,
-                                    k,
-                                    I_sev[j, k],
-                                    Q_sev[j, k] * gamma_sev_d[j, k] * I_sev[j, k],
-                                )
+                                self._calc_sigma(j, k, I_sev[j, k], Q_sev[j, k])
+                                * gamma_sev_d[j, k]
+                                * I_sev[j, k]
                                 for k in range(self.K)
                             ]
                         )
@@ -492,12 +489,9 @@ class Simulator:
                     [
                         np.array(
                             [
-                                self._calc_sigma(
-                                    j,
-                                    k,
-                                    I_sev[j, k],
-                                    Q_sev[j, k] * gamma_sev_d[j, k] * Q_sev[j, k],
-                                )
+                                self._calc_sigma(j, k, I_sev[j, k], Q_sev[j, k])
+                                * gamma_sev_d[j, k]
+                                * Q_sev[j, k]
                                 for k in range(self.K)
                             ]
                         )
