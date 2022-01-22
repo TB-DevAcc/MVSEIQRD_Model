@@ -10,7 +10,6 @@ class Simulator:
         self.params = None
         self.J = 1
         self.K = 1
-        self.check_S = []
 
     def run(self, params, simulation_type) -> dict:
         """
@@ -33,24 +32,6 @@ class Simulator:
         # TODO make sure attribute error doesn't crash this
         self.J = params["J"]
         self.K = params["K"]
-        self.N = params["N"]
-        self.N_total = params["N_total"]
-        self.B = params["B"]
-        self.sigma = params["sigma"]
-
-        self._M0 = params["M"]
-        self._V0 = params["V"]
-        self._S0 = params["S"]
-        self._E_tr0 = params["E_tr"]
-        self._E_nt0 = params["E_nt"]
-        self._I_asym0 =params["I_asym"]
-        self._I_sym0 = params["I_sym"]
-        self._I_sev0 = params["I_sev"]
-        self._Q_asym0 = params["Q_asym"]
-        self._Q_sym0 = params["Q_sym"]
-        self._Q_sev0 = params["Q_sev"]
-        self._R0 = params["R"]
-        self._D0 = params["D"]
 
         return self._run_ode_system(params)
 
@@ -114,7 +95,6 @@ class Simulator:
                 I_sev = self.params["I_sev"]
                 # TODO check numpy math and make sure it's not a shallow copy
 
-                # TODO choose one alternative and delete the other
                 res.append(
                     [
                         np.array(
@@ -134,19 +114,7 @@ class Simulator:
                         for j in range(self.J)
                     ]
                 )
-                # Alternative - [:, l, k] verschiebt Dimensionen
-                # res.append(
-                #     np.array(
-                #         [-np.sum(
-                #             [beta_asym[:, l, k] * I_asym[:, l]
-                #              + beta_sym[:, l, k] * I_sym[:, l]
-                #              + beta_sev[:, l, k] * I_sev[:, l]
-                #              for l in range(self.K)]
-                #         ) * S[:, k] for k in range(self.K)]
-                #     ).swapaxes(0, 1)
-                # )
 
-        self.check_S.append(np.array(res).sum(axis=0))
         return np.array(res).sum(axis=0)
 
     def _build_dE_ntdt(self, class_simulation_type: str = "E2 I3") -> np.ndarray:
@@ -400,9 +368,8 @@ class Simulator:
                                     (
                                         (1 - self._calc_sigma(j, k, I_sev[j, k], Q_sev[j, k]))
                                         * gamma_sev_r[j, k]
-                                        + self._calc_sigma(
-                                            j, k, I_sev[j, k], Q_sev[j, k] * gamma_sev_d[j, k]
-                                        )
+                                        + self._calc_sigma(j, k, I_sev[j, k], Q_sev[j, k])
+                                        * gamma_sev_d[j, k]
                                     )
                                     * Q_sev[j, k]
                                     for k in range(self.K)
@@ -531,22 +498,14 @@ class Simulator:
         list
             List of Ordinary differential equations that build a system
         """
-        tmp = params.reshape((13, self.J, self.K))
-        self.params["M"] = tmp[0]
-        self.params["V"] = tmp[1]
-        self.params["S"] = tmp[2]
-        self.params["E_tr"] = tmp[3]
-        self.params["E_nt"] = tmp[4]
-        self.params["I_asym"] = tmp[5]
-        self.params["I_sym"] = tmp[6]
-        self.params["I_sev"] = tmp[7]
-        self.params["Q_asym"] = tmp[8]
-        self.params["Q_sym"] = tmp[9]
-        self.params["Q_sev"] = tmp[10]
-        self.params["R"] = tmp[11]
-        self.params["D"] = tmp[12]
-
-        print("t: ", t)
+        # Simulation doesn't do useful things if self.params won't change
+        # -> so this reshape is necessary to set self.params to the calculated data from the previous iteration
+        # so the current iteration can use these calculated data to use them in the next calculation
+        self.params["M"], self.params["V"], self.params["S"], \
+        self.params["E_tr"], self.params["E_nt"], \
+        self.params["I_asym"], self.params["I_sym"], self.params["I_sev"], \
+        self.params["Q_asym"], self.params["Q_sym"], self.params["Q_sev"], \
+        self.params["R"], self.params["D"] = params.reshape((13, self.J, self.K))
 
         if self.simulation_type == "I3 S E2 I3 Q3 R I" or self.simulation_type == "full":
             return np.array([
@@ -594,14 +553,18 @@ class Simulator:
         :param Q_sev_dk: current value of Q_sev for district d in group k
         :return: value of sigma for current situation
         """
-        if (I_sev_dk + Q_sev_dk) * self.N[d, k] <= (self.N[d, k] / self.N_total[d]) * self.B[d]:
-            return self.sigma[d, k]
+        N_total = self.params["N_total"]
+        N = self.params["N"]
+        B = self.params["B"]
+        sigma = self.params["sigma"]
+        if (I_sev_dk + Q_sev_dk) * N[d, k] <= (N[d, k] / N_total[d]) * B[d]:
+            return sigma[d, k]
         else:
             return (
-                self.sigma[d, k] * (self.N[d, k] / self.N_total[d]) * self.B[d]
-                + (I_sev_dk + Q_sev_dk) * self.N[d, k]
-                - (self.N[d, k] / self.N_total[d]) * self.B[d]
-            ) / ((I_sev_dk + Q_sev_dk) * self.N[d, k])
+                   sigma[d, k] * (N[d, k] / N_total[d]) * B[d]
+                   + (I_sev_dk + Q_sev_dk) * N[d, k]
+                   - (N[d, k] / N_total[d]) * B[d]
+           ) / ((I_sev_dk + Q_sev_dk) * N[d, k])
 
     def simulate_RK45(self, t, params):
         """
@@ -633,19 +596,19 @@ class Simulator:
             t_eval=t,
             y0=np.array(
                 [
-                    self._M0,
-                    self._V0,
-                    self._S0,
-                    self._E_tr0,
-                    self._E_nt0,
-                    self._I_asym0,
-                    self._I_sym0,
-                    self._I_sev0,
-                    self._Q_asym0,
-                    self._Q_sym0,
-                    self._Q_sev0,
-                    self._R0,
-                    self._D0,
+                    self.params["M"],
+                    self.params["V"],
+                    self.params["S"],
+                    self.params["E_tr"],
+                    self.params["E_nt"],
+                    self.params["I_asym"],
+                    self.params["I_sym"],
+                    self.params["I_sev"],
+                    self.params["Q_asym"],
+                    self.params["Q_sym"],
+                    self.params["Q_sev"],
+                    self.params["R"],
+                    self.params["D"],
                 ]
             ).ravel(),
             method=method,
@@ -669,19 +632,19 @@ class Simulator:
             t=t,
             y0=np.array(
                 [
-                    self._M0,
-                    self._S0,
-                    self._V0,
-                    self._E_tr0,
-                    self._E_nt0,
-                    self._I_asym0,
-                    self._I_sym0,
-                    self._I_sev0,
-                    self._Q_asym0,
-                    self._Q_sym0,
-                    self._Q_sev0,
-                    self._R0,
-                    self._D0,
+                    self.params["M"],
+                    self.params["V"],
+                    self.params["S"],
+                    self.params["E_tr"],
+                    self.params["E_nt"],
+                    self.params["I_asym"],
+                    self.params["I_sym"],
+                    self.params["I_sev"],
+                    self.params["Q_asym"],
+                    self.params["Q_sym"],
+                    self.params["Q_sev"],
+                    self.params["R"],
+                    self.params["D"],
                 ]
             ).ravel(),
             tfirst=True,
