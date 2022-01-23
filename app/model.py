@@ -4,28 +4,29 @@ from view import View
 
 
 class Model:
-    def __init__(self, **kwargs) -> None:
+    def __init__(
+        self,
+        params: dict = None,
+        default_values_path="/data/default_values.json",
+        default_domains_path="/data/default_domains.json",
+    ) -> None:
         """
         Optional Parameters:
          params
-         J
-         K
+         default_values_path
+         default_domains_path
         """
-        # TODO implement
-        if "params" in kwargs:
-            self.params = kwargs["params"]
+        if params:
+            self._params = params
         else:
-            self.params = {}
-        if "J" in kwargs:
-            self.J = kwargs["J"]
-        else:
-            self.J = 1
-        if "K" in kwargs:
-            self.K = kwargs["K"]
-        else:
-            self.K = 1
+            self._params = {}
 
         self.simulation_type = None
+        self.controller = Controller(
+            default_values_path=default_values_path, default_domains_path=default_domains_path
+        )
+        self.simulator = Simulator()
+        self.view = View()
 
     def _update_view(self) -> None:
         """
@@ -34,19 +35,7 @@ class Model:
         # TODO implement
         ...
 
-    def _retrieve_parameter(self) -> dict:
-        """
-        Retrieves the parameter for the simulation from the controller 
-
-        Returns
-        -------
-        dict
-            Parameter for the simulation
-        """
-        controller = Controller()
-        controller.initialize_parameters(**self.params)
-
-    def _detect_simulation_type(self) -> str:
+    def _detect_simulation_type(self, params: dict) -> str:
         """
         Detects from a dict of parameters which epidemiological simulation can be run.
         E.g. if only beta and S are given, only the SI model can be run 
@@ -57,18 +46,29 @@ class Model:
             simulation_type (e.g. "SI", "SEIR", "ISEIQR")
         """
         # TODO implement
-        ...
+        return "MVRSEIQRI"
 
-    def run(self) -> None:
+    def reset_parameters(self):
         """
-        Retrieves parameter and runs the MVRSEIQRI simulation and updates the view
+        Resets the internal parameter list to an empty list. 
+        If run(fill_missing_values=True) is called after, the controller will use default values
         """
-        params = self._retrieve_parameter()
-        # TODO make sure entities and age groups are correct in every parameter
-        # TODO make sure params[J] (entities number) and params[K] (age group number) are available
+        self._params = {}
 
-        # TODO call simulator with simulation type
-        ...
+    def run(self, fill_missing_values: bool = False) -> None:
+        """
+        Retrieves parameter, runs the MVRSEIQRI simulation and updates the view.
+        This is equivalent to simulating one timestep.
+        """
+        # build complete parameter set with controller
+        if fill_missing_values:
+            params = self.controller.initialize_parameters(self._params)
+        else:
+            params = self.controller.check_params(self._params)
 
-        # TODO update the view
-        self._update_view(params)
+        # call simulator with simulation type
+        sim_type = self._detect_simulation_type(params)
+        self._params = self.simulator.run(params=params, simulation_type=sim_type)
+
+        # update the view
+        self._update_view(self._params)
