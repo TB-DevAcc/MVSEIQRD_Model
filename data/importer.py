@@ -1,15 +1,15 @@
 import pandas as pd
 import json
+import numpy as np
 
 
 class Importer:
     def __init__(
             self,
             default_age_group_data_path='simulation_test/altersgruppen.csv',
-            default_hospital_beds_data_path='/simulation_test/krankenhausbetten.csv'
+            default_hospital_beds_data_path='simulation_test/krankenhausbetten.csv'
     ):
         self.default_base_data = self._load_base_values(default_age_group_data_path, default_hospital_beds_data_path)
-        self._to_json()
 
     def _load_base_values(self, default_age_group_data_path, default_hospital_beds_data_path) -> pd.DataFrame:
         """
@@ -88,10 +88,10 @@ class Importer:
         age_groups["60 bis 79 Jahre"] = age_groups[
             ["60 bis unter 65 Jahre",
              "65 bis unter 75 Jahre"]
-        ].sum(axis=1)
+        ].sum(axis=1) + 0.047 * age_groups["Insgesamt"]
         age_groups["80 Jahre und älter"] = age_groups[
             ["75 Jahre und mehr"]
-        ].sum(axis=1)
+        ].sum(axis=1) - 0.047 * age_groups["Insgesamt"]
 
         age_groups = age_groups.iloc[:, [0, 1, -6, -5, -4, -3, -2, -1]]
         age_groups = age_groups.assign(Insgesamt=age_groups.iloc[:, [-6, -5, -4, -3, -2, -1]].sum(axis=1))
@@ -127,9 +127,21 @@ class Importer:
 
         return beds
 
-    def _to_json(self):
+    def _to_dict(self):
         """
         Save loaded base data in json files for controller
         """
         # TODO implement
-        ...
+        tmp = self.default_base_data.loc[:, self.default_base_data.columns != "Landkreis"] \
+            .set_index('IdLandkreis') \
+            .to_dict('index')
+
+        for (key, value) in tmp.items():
+            tmp[key]['N_total'] = tmp[key].pop('Insgesamt')
+            tmp[key]['B'] = tmp[key].pop('Krankenhausbetten')
+            tmp[key]['N'] = np.array([value2 for key2, value2 in value.items() if key2 not in ['N', 'B']])
+
+            # TODO: delete old keys
+            [tmp[key].pop(key2) for key2, value2 in value.items() if key2 not in ['N', 'B']]
+
+        return tmp
