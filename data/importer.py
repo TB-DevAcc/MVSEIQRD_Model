@@ -129,19 +129,16 @@ class Importer:
 
     def _to_dict(self):
         """
-        Save loaded base data in json files for controller
+        Return loaded base data for controller
         """
-        # TODO implement
-        tmp = self.default_base_data.loc[:, self.default_base_data.columns != "Landkreis"] \
+        base_values = self.default_base_data.loc[:, self.default_base_data.columns != "Landkreis"] \
             .set_index('IdLandkreis') \
             .to_dict('index')
 
-        for (key, value) in tmp.items():
-            tmp[key]['N_total'] = tmp[key].pop('Insgesamt')
-            tmp[key]['B'] = tmp[key].pop('Krankenhausbetten')
-            tmp[key]['N'] = np.array([value2 for key2, value2 in value.items() if key2 not in ['N', 'B']])
+        for (key, value) in base_values.items():
+            base_values[key]['N_total'] = base_values[key].pop('Insgesamt')
+            base_values[key]['B'] = base_values[key].pop('Krankenhausbetten')
+            base_values[key]['N'] = np.array([value2 for key2, value2 in value.items() if key2 not in ['N', 'B']])
+            base_values[key] = {key2: base_values[key][key2] for key2 in base_values[key] if key2 in ['N_total', 'N', 'B']}
 
-            # TODO: delete old keys
-            [tmp[key].pop(key2) for key2, value2 in value.items() if key2 not in ['N', 'B']]
-
-        return tmp
+        return base_values
