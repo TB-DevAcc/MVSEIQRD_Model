@@ -127,9 +127,14 @@ class Importer:
 
         return beds
 
-    def _to_dict(self):
+    def _get_base_values(self) -> dict:
         """
         Return loaded base data for controller
+
+        Returns
+        -------
+        dict
+            base_values of districts for simulation
         """
         base_values = self.default_base_data.loc[:, self.default_base_data.columns != "Landkreis"] \
             .set_index('IdLandkreis') \
