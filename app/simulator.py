@@ -10,6 +10,7 @@ class Simulator:
         self.params = None
         self.J = 1
         self.K = 1
+        self.V_inactive_days = 0
 
     def run(self, params, simulation_type) -> dict:
         """
@@ -32,10 +33,11 @@ class Simulator:
         # TODO make sure attribute error doesn't crash this
         self.J = params["J"]
         self.K = params["K"]
+        self.V_inactive_days = params["V_inactive_days"]
 
         return self._run_ode_system(params)
 
-    def _build_dMdt(self, class_simulation_type: str = "M") -> np.ndarray:
+    def _build_dMdt(self, t, class_simulation_type: str = "M") -> np.ndarray:
         res = []
         for cls in class_simulation_type.split():
             if cls == "M":
@@ -46,8 +48,10 @@ class Simulator:
 
         return np.array(res).sum(axis=0)
 
-    def _build_dVdt(self, class_simulation_type: str = "V S") -> np.ndarray:
+    def _build_dVdt(self, t, class_simulation_type: str = "V S") -> np.ndarray:
         res = []
+        if t < self.V_inactive_days:
+            return np.zeros((self.J, self.K))
         for cls in class_simulation_type.split():
             if cls == "V":
                 rho_vac = self.params["rho_vac"]
@@ -62,7 +66,7 @@ class Simulator:
 
         return np.array(res).sum(axis=0)
 
-    def _build_dSdt(self, class_simulation_type: str = "M V R I3") -> np.ndarray:
+    def _build_dSdt(self, t, class_simulation_type: str = "M V R I3") -> np.ndarray:
         res = []
         for cls in class_simulation_type.split():
             # Immune
@@ -72,12 +76,15 @@ class Simulator:
                 # TODO check numpy math and make sure it's not a shallow copy
                 res.append(rho_mat * M)
             if cls == "V":
-                rho_vac = self.params["rho_vac"]
-                nu = self.params["nu"]
-                S = self.params["S"]
-                V = self.params["V"]
-                # TODO check numpy math and make sure it's not a shallow copy
-                res.append(rho_vac * V - nu * S)
+                if t < self.V_inactive_days:
+                    res.append(np.zeros((self.J, self.K)))
+                else:
+                    rho_vac = self.params["rho_vac"]
+                    nu = self.params["nu"]
+                    S = self.params["S"]
+                    V = self.params["V"]
+                    # TODO check numpy math and make sure it's not a shallow copy
+                    res.append(rho_vac * V - nu * S)
             if cls == "R":
                 rho_rec = self.params["rho_rec"]
                 R = self.params["R"]
@@ -117,7 +124,7 @@ class Simulator:
 
         return np.array(res).sum(axis=0)
 
-    def _build_dE_ntdt(self, class_simulation_type: str = "E2 I3") -> np.ndarray:
+    def _build_dE_ntdt(self, t, class_simulation_type: str = "E2 I3") -> np.ndarray:
         res = []
         for cls in class_simulation_type.split():
             if cls == "I3":
@@ -175,7 +182,7 @@ class Simulator:
 
         return np.array(res).sum(axis=0)
 
-    def _build_dE_trdt(self, class_simulation_type: str = "E2 I3") -> np.ndarray:
+    def _build_dE_trdt(self, t, class_simulation_type: str = "E2 I3") -> np.ndarray:
         res = []
         for cls in class_simulation_type.split():
             if cls == "I3":
@@ -213,7 +220,7 @@ class Simulator:
 
         return np.array(res).sum(axis=0)
 
-    def _build_dI_asymdt(self, class_simulation_type: str = "E2 I3") -> np.ndarray:
+    def _build_dI_asymdt(self, t, class_simulation_type: str = "E2 I3") -> np.ndarray:
         res = []
         for cls in class_simulation_type.split():
             if cls == "E2":
@@ -235,7 +242,7 @@ class Simulator:
 
         return np.array(res).sum(axis=0)
 
-    def _build_dI_symdt(self, class_simulation_type: str = "I3") -> np.ndarray:
+    def _build_dI_symdt(self, t, class_simulation_type: str = "I3") -> np.ndarray:
         res = []
         for cls in class_simulation_type.split():
             if cls == "I3":
@@ -255,7 +262,7 @@ class Simulator:
 
         return np.array(res).sum(axis=0)
 
-    def _build_dI_sevdt(self, class_simulation_type: str = "I3") -> np.ndarray:
+    def _build_dI_sevdt(self, t, class_simulation_type: str = "I3") -> np.ndarray:
         res = []
         for cls in class_simulation_type.split():
             if cls == "I3":
@@ -296,7 +303,7 @@ class Simulator:
 
         return np.array(res).sum(axis=0)
 
-    def _build_dQ_asymdt(self, class_simulation_type: str = "E2 I3 Q3") -> np.ndarray:
+    def _build_dQ_asymdt(self, t, class_simulation_type: str = "E2 I3 Q3") -> np.ndarray:
         res = []
         for cls in class_simulation_type.split():
             if cls == "E2":
@@ -319,7 +326,7 @@ class Simulator:
 
         return np.array(res).sum(axis=0)
 
-    def _build_dQ_symdt(self, class_simulation_type: str = "I3 Q3") -> np.ndarray:
+    def _build_dQ_symdt(self, t, class_simulation_type: str = "I3 Q3") -> np.ndarray:
         res = []
         for cls in class_simulation_type.split():
             if cls == "I3":
@@ -339,7 +346,7 @@ class Simulator:
 
         return np.array(res).sum(axis=0)
 
-    def _build_dQ_sevdt(self, class_simulation_type: str = "I3 Q3") -> np.ndarray:
+    def _build_dQ_sevdt(self, t, class_simulation_type: str = "I3 Q3") -> np.ndarray:
         res = []
         for cls in class_simulation_type.split():
             if cls == "I3":
@@ -383,7 +390,7 @@ class Simulator:
 
         return np.array(res).sum(axis=0)
 
-    def _build_dRdt(self, class_simulation_type: str = "I3 Q3 R") -> np.ndarray:
+    def _build_dRdt(self, t, class_simulation_type: str = "I3 Q3 R") -> np.ndarray:
         res = []
         for cls in class_simulation_type.split():
             if cls == "I3":
@@ -446,7 +453,7 @@ class Simulator:
 
         return np.array(res).sum(axis=0)
 
-    def _build_dDdt(self, class_simulation_type: str = "I3 Q3") -> np.ndarray:
+    def _build_dDdt(self, t, class_simulation_type: str = "I3 Q3") -> np.ndarray:
         res = []
         for cls in class_simulation_type.split():
             if cls == "I3":
@@ -509,19 +516,19 @@ class Simulator:
 
         if self.simulation_type == "I3 S E2 I3 Q3 R I" or self.simulation_type == "full":
             return np.array([
-                self._build_dMdt(),
-                self._build_dVdt(),
-                self._build_dSdt(),
-                self._build_dE_trdt(),
-                self._build_dE_ntdt(),
-                self._build_dI_asymdt(),
-                self._build_dI_symdt(),
-                self._build_dI_sevdt(),
-                self._build_dQ_asymdt(),
-                self._build_dQ_symdt(),
-                self._build_dQ_sevdt(),
-                self._build_dRdt(),
-                self._build_dDdt(),
+                self._build_dMdt(t),
+                self._build_dVdt(t),
+                self._build_dSdt(t),
+                self._build_dE_trdt(t),
+                self._build_dE_ntdt(t),
+                self._build_dI_asymdt(t),
+                self._build_dI_symdt(t),
+                self._build_dI_sevdt(t),
+                self._build_dQ_asymdt(t),
+                self._build_dQ_symdt(t),
+                self._build_dQ_sevdt(t),
+                self._build_dRdt(t),
+                self._build_dDdt(t),
             ]).ravel()
         # TODO implement different simulation types
 
