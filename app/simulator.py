@@ -11,6 +11,7 @@ class Simulator:
         self.J = 1
         self.K = 1
         self.V_inactive_days = 0
+        self.psi_inactive_days = 0
 
     def run(self, params, simulation_type) -> dict:
         """
