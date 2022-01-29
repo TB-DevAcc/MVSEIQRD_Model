@@ -45,7 +45,6 @@ class Simulator:
             if cls == "M":
                 rho_mat = self.params["rho_mat"]
                 M = self.params["M"]
-                # TODO check numpy math and make sure it's not a shallow copy
                 res.append(-1 * rho_mat * M)
 
         return np.array(res).sum(axis=0)
@@ -58,12 +57,10 @@ class Simulator:
             if cls == "V":
                 rho_vac = self.params["rho_vac"]
                 V = self.params["V"]
-                # TODO check numpy math and make sure it's not a shallow copy
                 res.append(-1 * rho_vac * V)
             if cls == "S":
                 nu = self.params["nu"]
                 S = self.params["S"]
-                # TODO check numpy math and make sure it's not a shallow copy
                 res.append(nu * S)
 
         return np.array(res).sum(axis=0)
@@ -75,7 +72,6 @@ class Simulator:
             if cls == "M":
                 rho_mat = self.params["rho_mat"]
                 M = self.params["M"]
-                # TODO check numpy math and make sure it's not a shallow copy
                 res.append(rho_mat * M)
             if cls == "V":
                 if t < self.V_inactive_days:
@@ -85,12 +81,10 @@ class Simulator:
                     nu = self.params["nu"]
                     S = self.params["S"]
                     V = self.params["V"]
-                    # TODO check numpy math and make sure it's not a shallow copy
                     res.append(rho_vac * V - nu * S)
             if cls == "R":
                 rho_rec = self.params["rho_rec"]
                 R = self.params["R"]
-                # TODO check numpy math and make sure it's not a shallow copy
                 res.append(rho_rec * R)
             # Infectious
             if cls == "I3":
@@ -102,7 +96,6 @@ class Simulator:
                 I_asym = self.params["I_asym"]
                 I_sym = self.params["I_sym"]
                 I_sev = self.params["I_sev"]
-                # TODO check numpy math and make sure it's not a shallow copy
 
                 res.append(
                     [
@@ -134,7 +127,6 @@ class Simulator:
                 S = self.params["S"]
                 N = self.params["N"]
                 I_asym = self.params["I_asym"]
-                # TODO check numpy math and make sure it's not a shallow copy
                 res.append(
                     [
                         np.array(
@@ -153,7 +145,6 @@ class Simulator:
                 psi = self._calc_psi(t)
                 I_sym = self.params["I_sym"]
                 I_sev = self.params["I_sev"]
-                # TODO check numpy math and make sure it's not a shallow copy
                 res.append(
                     [
                         np.array(
@@ -179,7 +170,6 @@ class Simulator:
             if cls == "E2":
                 epsilon = self.params["epsilon"]
                 Ent = self.params["E_nt"]
-                # TODO check numpy math and make sure it's not a shallow copy
                 res.append(-1 * epsilon * Ent)
 
         return np.array(res).sum(axis=0)
@@ -195,7 +185,6 @@ class Simulator:
                 I_sev = self.params["I_sev"]
                 S = self.params["S"]
                 N = self.params["N"]
-                # TODO check numpy math and make sure it's not a shallow copy
                 res.append(
                     [
                         np.array(
@@ -217,7 +206,6 @@ class Simulator:
             if cls == "E2":
                 epsilon = self.params["epsilon"]
                 Etr = self.params["E_tr"]
-                # TODO check numpy math and make sure it's not a shallow copy
                 res.append(-1 * epsilon * Etr)
 
         return np.array(res).sum(axis=0)
@@ -228,7 +216,6 @@ class Simulator:
             if cls == "E2":
                 epsilon = self.params["epsilon"]
                 Ent = self.params["E_nt"]
-                # TODO check numpy math and make sure it's not a shallow copy
                 res.append(epsilon * Ent)
             if cls == "I3":
                 gamma_asym = self.params["gamma_asym"]
@@ -236,7 +223,6 @@ class Simulator:
                 my_sev = self.params["my_sev"]
                 tau_asym = self.params["tau_asym"]
                 I_asym = self.params["I_asym"]
-                # TODO check numpy math and make sure it's not a shallow copy
                 res.append(
                     -1
                     * (gamma_asym * I_asym + my_sym * I_asym + my_sev * I_asym + tau_asym * I_asym)
@@ -255,7 +241,6 @@ class Simulator:
                 I_asym = self.params["I_asym"]
                 I_sym = self.params["I_sym"]
                 I_sev = self.params["I_sev"]
-                # TODO check numpy math and make sure it's not a shallow copy
                 res.append(
                     my_sym * I_asym
                     + my_sym * I_sev
@@ -277,7 +262,6 @@ class Simulator:
                 I_sym = self.params["I_sym"]
                 I_sev = self.params["I_sev"]
                 Q_sev = self.params["Q_sev"]
-                # TODO check numpy math and make sure it's not a shallow copy
                 res.append(
                     my_sev * I_asym
                     + my_sev * I_sym
@@ -311,19 +295,16 @@ class Simulator:
             if cls == "E2":
                 epsilon = self.params["epsilon"]
                 Etr = self.params["E_tr"]
-                # TODO check numpy math and make sure it's not a shallow copy
                 res.append(epsilon * Etr)
             if cls == "I3":
                 tau_asym = self.params["tau_asym"]
                 I_asym = self.params["I_asym"]
-                # TODO check numpy math and make sure it's not a shallow copy
                 res.append(tau_asym * I_asym)
             if cls == "Q3":
                 gamma_asym = self.params["gamma_asym"]
                 my_sym = self.params["my_sym"]
                 my_sev = self.params["my_sev"]
                 Q_asym = self.params["Q_asym"]
-                # TODO check numpy math and make sure it's not a shallow copy
                 res.append(-1 * (gamma_asym * Q_asym + my_sym * Q_asym + my_sev * Q_asym))
 
         return np.array(res).sum(axis=0)
@@ -334,7 +315,6 @@ class Simulator:
             if cls == "I3":
                 tau_sym = self.params["tau_sym"]
                 I_sym = self.params["I_sym"]
-                # TODO check numpy math and make sure it's not a shallow copy
                 res.append(tau_sym * I_sym)
             if cls == "Q3":
                 my_sym = self.params["my_sym"]
@@ -343,7 +323,6 @@ class Simulator:
                 Q_asym = self.params["Q_asym"]
                 Q_sev = self.params["Q_sev"]
                 Q_sym = self.params["Q_sym"]
-                # TODO check numpy math and make sure it's not a shallow copy
                 res.append(my_sym * Q_asym + my_sym * Q_sev - (gamma_sym * Q_sym + my_sev * Q_sym))
 
         return np.array(res).sum(axis=0)
@@ -354,7 +333,6 @@ class Simulator:
             if cls == "I3":
                 tau_sev = self.params["tau_sev"]
                 I_sev = self.params["I_sev"]
-                # TODO check numpy math and make sure it's not a shallow copy
                 res.append(tau_sev * I_sev)
             if cls == "Q3":
                 my_sev = self.params["my_sev"]
@@ -365,7 +343,6 @@ class Simulator:
                 Q_sym = self.params["Q_sym"]
                 Q_sev = self.params["Q_sev"]
                 I_sev = self.params["I_sev"]
-                # TODO check numpy math and make sure it's not a shallow copy
                 res.append(
                     my_sev * Q_asym
                     + my_sev * Q_sym
@@ -403,7 +380,6 @@ class Simulator:
                 I_sym = self.params["I_sym"]
                 I_sev = self.params["I_sev"]
                 Q_sev = self.params["Q_sev"]
-                # TODO check numpy math and make sure it's not a shallow copy
                 res.append(
                     gamma_asym * I_asym
                     + gamma_sym * I_sym
@@ -429,7 +405,6 @@ class Simulator:
                 Q_sym = self.params["Q_sym"]
                 Q_sev = self.params["Q_sev"]
                 I_sev = self.params["I_sev"]
-                # TODO check numpy math and make sure it's not a shallow copy
                 res.append(
                     gamma_asym * Q_asym
                     + gamma_sym * Q_sym
@@ -450,7 +425,6 @@ class Simulator:
             if cls == "R":
                 rho_rec = self.params["rho_rec"]
                 R = self.params["R"]
-                # TODO check numpy math and make sure it's not a shallow copy
                 res.append(-1 * rho_rec * R)
 
         return np.array(res).sum(axis=0)
@@ -462,7 +436,6 @@ class Simulator:
                 gamma_sev_d = self.params["gamma_sev_d"]
                 I_sev = self.params["I_sev"]
                 Q_sev = self.params["Q_sev"]
-                # TODO check numpy math and make sure it's not a shallow copy
                 res.append(
                     [
                         np.array(
@@ -480,7 +453,6 @@ class Simulator:
                 gamma_sev_d = self.params["gamma_sev_d"]
                 I_sev = self.params["I_sev"]
                 Q_sev = self.params["Q_sev"]
-                # TODO check numpy math and make sure it's not a shallow copy
                 res.append(
                     [
                         np.array(
@@ -550,7 +522,6 @@ class Simulator:
         dict
             New parameters
         """
-        # TODO run system
         return self.simulate_RK45(params["t"], params)
 
     def _calc_sigma(self, d, k, I_sev_dk, Q_sev_dk):
