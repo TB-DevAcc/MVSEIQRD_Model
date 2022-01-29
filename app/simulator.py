@@ -28,6 +28,10 @@ class Simulator:
             New parameters
         """
         self.params = params
+        self.supported_sim_types = [
+            "S I",
+            "M V S E2 I3 Q3 R D",
+        ]
         self.simulation_type = simulation_type
         # TODO make sure attribute error doesn't crash this
         self.J = params["J"]
@@ -146,7 +150,8 @@ class Simulator:
                                         for l in range(self.K)
                                     ]
                                 )
-                                * S[j, k] / N[j, k]
+                                * S[j, k]
+                                / N[j, k]
                                 for k in range(self.K)
                             ]
                         )
@@ -183,7 +188,8 @@ class Simulator:
                         np.array(
                             [
                                 np.sum([beta_asym[j, l, k] * I_asym[j, l] for l in range(self.K)])
-                                * S[j, k] / N[j, k]
+                                * S[j, k]
+                                / N[j, k]
                                 for k in range(self.K)
                             ]
                         )
@@ -212,7 +218,8 @@ class Simulator:
                                         for l in range(self.K)
                                     ]
                                 )
-                                * S[j, k] / N[j, k]
+                                * S[j, k]
+                                / N[j, k]
                                 for k in range(self.K)
                             ]
                         )
@@ -263,7 +270,8 @@ class Simulator:
                                         for l in range(self.K)
                                     ]
                                 )
-                                * S[j, k] / N[j, k]
+                                * S[j, k]
+                                / N[j, k]
                                 for k in range(self.K)
                             ]
                         )
@@ -677,28 +685,40 @@ class Simulator:
         # Simulation doesn't do useful things if self.params won't change
         # -> so this reshape is necessary to set self.params to the calculated data from the previous iteration
         # so the current iteration can use these calculated data to use them in the next calculation
-        self.params["M"], self.params["V"], self.params["S"], \
-        self.params["E_tr"], self.params["E_nt"], \
-        self.params["I_asym"], self.params["I_sym"], self.params["I_sev"], \
-        self.params["Q_asym"], self.params["Q_sym"], self.params["Q_sev"], \
-        self.params["R"], self.params["D"] = params.reshape((13, self.J, self.K))
+        (
+            self.params["M"],
+            self.params["V"],
+            self.params["S"],
+            self.params["E_tr"],
+            self.params["E_nt"],
+            self.params["I_asym"],
+            self.params["I_sym"],
+            self.params["I_sev"],
+            self.params["Q_asym"],
+            self.params["Q_sym"],
+            self.params["Q_sev"],
+            self.params["R"],
+            self.params["D"],
+        ) = params.reshape((13, self.J, self.K))
 
         if self.simulation_type == "I3 S E2 I3 Q3 R I" or self.simulation_type == "full":
-            return np.array([
-                self._build_dMdt(),
-                self._build_dVdt(),
-                self._build_dSdt(),
-                self._build_dE_trdt(),
-                self._build_dE_ntdt(),
-                self._build_dI_asymdt(),
-                self._build_dI_symdt(),
-                self._build_dI_sevdt(),
-                self._build_dQ_asymdt(),
-                self._build_dQ_symdt(),
-                self._build_dQ_sevdt(),
-                self._build_dRdt(),
-                self._build_dDdt(),
-            ]).ravel()
+            return np.array(
+                [
+                    self._build_dMdt(),
+                    self._build_dVdt(),
+                    self._build_dSdt(),
+                    self._build_dE_trdt(),
+                    self._build_dE_ntdt(),
+                    self._build_dI_asymdt(),
+                    self._build_dI_symdt(),
+                    self._build_dI_sevdt(),
+                    self._build_dQ_asymdt(),
+                    self._build_dQ_symdt(),
+                    self._build_dQ_sevdt(),
+                    self._build_dRdt(),
+                    self._build_dDdt(),
+                ]
+            ).ravel()
         # TODO implement different simulation types
 
     def _run_ode_system(self, params) -> dict:
@@ -745,10 +765,10 @@ class Simulator:
             return sigma[j, k]
         else:
             return (
-                   sigma[j, k] * (N[j, k] / N_total[j]) * B[j]
-                   + (I_sev_jk + Q_sev_jk) * N[j, k]
-                   - (N[j, k] / N_total[j]) * B[j]
-           ) / ((I_sev_jk + Q_sev_jk) * N[j, k])
+                sigma[j, k] * (N[j, k] / N_total[j]) * B[j]
+                + (I_sev_jk + Q_sev_jk) * N[j, k]
+                - (N[j, k] / N_total[j]) * B[j]
+            ) / ((I_sev_jk + Q_sev_jk) * N[j, k])
 
     def _simulate_RK45(self, t, params) -> np.ndarray:
         """
