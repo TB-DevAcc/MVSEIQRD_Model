@@ -144,7 +144,7 @@ class Controller:
         J in [0, 1]                   # geographic locations
         K in [0, 1]                   # age groups
         """
-        self._params = {
+        self.params = {
             "M": None,
             "V": None,
             "R": None,
@@ -191,6 +191,13 @@ class Controller:
         }
         self.default_values = self._load_default_values(default_values_path)
         self.default_domains = self._load_default_domains(default_domains_path)
+
+    def reset(self):
+        """
+        Resets the current controllers paramter dict to None
+        """
+        for key in self.params:
+            self.params[key] = None
 
     def _load_default_values(self, default_values_path) -> dict:
         try:
@@ -274,7 +281,7 @@ class Controller:
             params["J"]
         except AttributeError as ae:
             # TODO logging info or raise Error
-            self._params["J"] = self.default_values["J"]
+            self.params["J"] = self.default_values["J"]
 
         try:
             params["K"]
@@ -282,7 +289,7 @@ class Controller:
             # TODO logging info
             for key in params:
                 if key not in ["K", "J", "beta"]:
-                    self._params["K"] = len(params[key][0])
+                    self.params["K"] = len(params[key][0])
                     break
 
         # make sure entities and age groups are correct in every parameter
@@ -298,7 +305,7 @@ class Controller:
                 # TODO check correct shape of beta
                 pass
 
-    def initialize_parameters(self, params: dict = None) -> None:
+    def initialize_parameters(self, params: dict = None) -> dict:
         """
         Initializes all parameters either by default or by setting it with supplied params dict
         """
@@ -307,12 +314,14 @@ class Controller:
             params = {}
         for key, val in self.default_values.items():
             if key in params:
-                self._params[key] = params[key]
+                self.params[key] = params[key]
             else:
-                self._params[key] = val
+                self.params[key] = val
 
         # make sure types are clear first under valid_domain and then initialize within bounds
-        self.check_params(self._params)
+        self.check_params(self.params)
+
+        return self.params
 
     def set_values(self, params: dict) -> None:
         """
@@ -328,7 +337,7 @@ class Controller:
         """
         self.check_params(params)
         for key, val in params:
-            self._params[key] = val
+            self.params[key] = val
 
     def get_values(self, keys: list) -> dict:
         """
@@ -339,4 +348,4 @@ class Controller:
             keys : list
                 list of strings, that are keys for parameters
         """
-        return {key: self._params[key] for key in keys}
+        return {key: self.params[key] for key in keys}
