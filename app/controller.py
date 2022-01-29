@@ -307,9 +307,9 @@ class Controller:
             params = {}
         for key, val in self.default_values.items():
             if key in params:
-                self._params[key] = val
+                self._params[key] = params[key]
             else:
-                self._params[key] = self.default_values[key]
+                self._params[key] = val
 
         # make sure types are clear first under valid_domain and then initialize within bounds
         self.check_params(self._params)
