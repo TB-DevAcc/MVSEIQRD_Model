@@ -34,6 +34,7 @@ class Simulator:
         self.J = params["J"]
         self.K = params["K"]
         self.V_inactive_days = params["V_inactive_days"]
+        self.psi_inactive_days = params["psi_inactive_days"]
 
         return self._run_ode_system(params)
 
@@ -148,7 +149,7 @@ class Simulator:
 
                 beta_sym = self.params["beta_sym"]
                 beta_sev = self.params["beta_sev"]
-                psi = self.params["psi"]
+                psi = self._calc_psi(t)
                 I_sym = self.params["I_sym"]
                 I_sev = self.params["I_sev"]
                 # TODO check numpy math and make sure it's not a shallow copy
@@ -188,7 +189,7 @@ class Simulator:
             if cls == "I3":
                 beta_sym = self.params["beta_sym"]
                 beta_sev = self.params["beta_sev"]
-                psi = self.params["psi"]
+                psi = self._calc_psi(t)
                 I_sym = self.params["I_sym"]
                 I_sev = self.params["I_sev"]
                 S = self.params["S"]
@@ -572,6 +573,19 @@ class Simulator:
                    + (I_sev_dk + Q_sev_dk) * N[d, k]
                    - (N[d, k] / N_total[d]) * B[d]
            ) / ((I_sev_dk + Q_sev_dk) * N[d, k])
+
+    def _calc_psi(self, t):
+        """
+        Returns value of psi for specific situation dependent on current timestep
+        Parameters
+        ----------
+        t
+            Current timestep in simulation
+        """
+        if t < self.psi_inactive_days:
+            return np.zeros((self.J, self.K))
+        else:
+            return self.params["psi"]
 
     def simulate_RK45(self, t, params):
         """
