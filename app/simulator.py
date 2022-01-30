@@ -111,6 +111,27 @@ class Simulator:
 
         return np.array(res).sum(axis=0)
 
+    def _build_dEdt(self, t, class_simulation_type: str = "E2") -> np.ndarray:
+        """
+        Wrap equations for E (exposed)
+        Parameters
+        ----------
+        t : int
+            Current timestep
+        class_simulation_type : str
+            Simulation Type
+
+        Returns
+        -------
+        np.ndarray
+            Equation for class E based on simulation_type
+
+        """
+        if "E2" in class_simulation_type:
+            return self._build_dE_trdt(t), self._build_dE_ntdt(t)
+        elif "E1" in class_simulation_type:
+            pass
+
     def _build_dE_ntdt(self, t, class_simulation_type: str = "E2 I3") -> np.ndarray:
         res = []
         for cls in class_simulation_type.split():
@@ -224,6 +245,29 @@ class Simulator:
 
         return np.array(res).sum(axis=0)
 
+    def _build_dIdt(self, t, class_simulation_type: str = "I3") -> np.ndarray:
+        """
+        Wrap equation for I (infectious)
+        Parameters
+        ----------
+        t : int
+            Current timestep
+        class_simulation_type : str
+            Simulation Type
+
+        Returns
+        -------
+        np.ndarray
+            Equation for class I based on simulation_type
+
+        """
+        if "I3" in class_simulation_type:
+            return self._build_dI_asymdt(t), self._build_dI_symdt(t), self._build_dI_sevdt(t)
+        elif "I2" in class_simulation_type:
+            return self._build_dI_asymdt(t), self._build_dI_symdt(t)
+        elif "I1" in class_simulation_type:
+            pass
+
     def _build_dI_asymdt(self, t, class_simulation_type: str = "E2 I3") -> np.ndarray:
         res = []
         for cls in class_simulation_type.split():
@@ -318,6 +362,29 @@ class Simulator:
                 )
 
         return np.array(res).sum(axis=0)
+
+    def _build_dQdt(self, t, class_simulation_type: str = "Q3") -> np.ndarray:
+        """
+        Wrap equation for class Q (quarantined)
+        Parameters
+        ----------
+        t : int
+            Current timestep
+        class_simulation_type : str
+            Simulation Type
+
+        Returns
+        -------
+        np.ndarray
+            Equation for class Q based on simulation_type
+
+        """
+        if "Q3" in class_simulation_type:
+            return self._build_dQ_asymdt(t), self._build_dQ_symdt(t), self._build_dQ_sevdt(t)
+        elif "Q2" in class_simulation_type:
+            return self._build_dQ_asymdt(t), self._build_dQ_symdt(t)
+        elif "Q1" in class_simulation_type:
+            pass
 
     def _build_dQ_asymdt(self, t, class_simulation_type: str = "E2 I3 Q3") -> np.ndarray:
         res = []
@@ -552,27 +619,31 @@ class Simulator:
             self.params["D"],
         ) = params.reshape((13, self.J, self.K))
 
-        if (
-            self.simulation_type == "I3 S E2 I3 Q3 R I"
-            or self.simulation_type == "full"
-        ):
-            return np.array(
-                [
-                    self._build_dMdt(t),
-                    self._build_dVdt(t),
-                    self._build_dSdt(t),
-                    self._build_dE_trdt(t),
-                    self._build_dE_ntdt(t),
-                    self._build_dI_asymdt(t),
-                    self._build_dI_symdt(t),
-                    self._build_dI_sevdt(t),
-                    self._build_dQ_asymdt(t),
-                    self._build_dQ_symdt(t),
-                    self._build_dQ_sevdt(t),
-                    self._build_dRdt(t),
-                    self._build_dDdt(t),
-                ]
-            ).ravel()
+        result = []
+        if "M" in self.simulation_type or self.simulation_type == "full":
+            result.append(self._build_dMdt(t))
+        if "V" in self.simulation_type or self.simulation_type == "full":
+            result.append(self._build_dVdt(t))
+        if "S" in self.simulation_type or self.simulation_type == "full":
+            result.append(self._build_dSdt(t))
+        if "E" in self.simulation_type or self.simulation_type == "full":
+            e = self._build_dEdt(t)
+            for sub_types in e:
+                result.append(sub_types)
+        if "I" in self.simulation_type or self.simulation_type == "full":
+            i = self._build_dIdt(t)
+            for sub_types in i:
+                result.append(sub_types)
+        if "Q" in self.simulation_type or self.simulation_type == "full":
+            q = self._build_dQdt(t)
+            for sub_types in q:
+                result.append(sub_types)
+        if "R" in self.simulation_type or self.simulation_type == "full":
+            result.append(self._build_dRdt(t))
+        if "D" in self.simulation_type or self.simulation_type == "full":
+            result.append(self._build_dDdt(t))
+
+        return np.array(result).ravel()
         # TODO implement different simulation types
 
     def _run_ode_system(self, params) -> dict:
