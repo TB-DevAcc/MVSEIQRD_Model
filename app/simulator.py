@@ -6,6 +6,10 @@ from scipy.integrate import odeint, solve_ivp
 class Simulator:
     def __init__(self) -> None:
         self.ode_list = None
+        self.supported_sim_types = [
+            "S I",
+            "M V S E2 I3 Q3 R D",
+        ]
         self.simulation_type = None
         self.params = None
         self.J = 1
@@ -28,10 +32,6 @@ class Simulator:
             New parameters
         """
         self.params = params
-        self.supported_sim_types = [
-            "S I",
-            "M V S E2 I3 Q3 R D",
-        ]
         self.simulation_type = simulation_type
         # TODO make sure attribute error doesn't crash this
         self.J = params["J"]
