@@ -94,7 +94,7 @@ class Model:
                 sim_type += " E"
 
         # I
-        if "mu_sym" in keys and "mu_asym" in keys:
+        if "mu_sym" in keys:
             if "mu_sev" in keys:
                 sim_type += " I3"
             else:
