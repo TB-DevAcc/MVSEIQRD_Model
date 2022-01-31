@@ -45,91 +45,88 @@ class Simulator:
         if self.simulation_type == "M V S E2 I3 Q3 R D":
             return 13
 
-    def _build_dMdt(self, t, class_simulation_type: str = "M") -> np.ndarray:
+    def _build_dMdt(self, t) -> np.ndarray:
         res = []
-        for cls in class_simulation_type.split():
-            if cls == "M":
-                rho_mat = self.params["rho_mat"]
-                M = self.params["M"]
-                res.append(-1 * rho_mat[int(t - 1)] * M)
+        rho_mat = self.params["rho_mat"]
+        M = self.params["M"]
+        res.append(-1 * rho_mat[int(t - 1)] * M)
 
         return np.array(res).sum(axis=0)
 
-    def _build_dVdt(self, t, class_simulation_type: str = "V S") -> np.ndarray:
+    def _build_dVdt(self, t) -> np.ndarray:
         res = []
-        for cls in class_simulation_type.split():
-            if cls == "V":
-                rho_vac = self.params["rho_vac"]
-                V = self.params["V"]
-                res.append(-1 * rho_vac[int(t - 1)] * V)
-            if cls == "S":
-                nu = self.params["nu"]
-                S = self.params["S"]
-                res.append(nu[int(t - 1)] * S)
+
+        rho_vac = self.params["rho_vac"]
+        V = self.params["V"]
+        res.append(-1 * rho_vac[int(t - 1)] * V)
+
+        nu = self.params["nu"]
+        S = self.params["S"]
+        res.append(nu[int(t - 1)] * S)
 
         return np.array(res).sum(axis=0)
 
-    def _build_dSdt(self, t, class_simulation_type: str = "M V R I3") -> np.ndarray:
+    def _build_dSdt(self, t) -> np.ndarray:
         res = []
-        for cls in class_simulation_type.split():
-            # Immune
-            if cls == "M":
-                rho_mat = self.params["rho_mat"]
-                M = self.params["M"]
-                res.append(rho_mat[int(t - 1)] * M)
-            if cls == "V":
-                rho_vac = self.params["rho_vac"]
-                nu = self.params["nu"]
-                S = self.params["S"]
-                V = self.params["V"]
-                res.append(rho_vac[int(t - 1)] * V - nu[int(t - 1)] * S)
-            if cls == "R":
-                rho_rec = self.params["rho_rec"]
-                R = self.params["R"]
-                res.append(rho_rec[int(t - 1)] * R)
-            # Infectious
-            if cls == "I3":
-                S = self.params["S"]
-                N = self.params["N"]
-                beta_asym = self.params["beta_asym"]
-                beta_sym = self.params["beta_sym"]
-                beta_sev = self.params["beta_sev"]
-                I_asym = self.params["I_asym"]
-                I_sym = self.params["I_sym"]
-                I_sev = self.params["I_sev"]
+        cls = self.simulation_type.split()
+        if "M" in cls:
+            rho_mat = self.params["rho_mat"]
+            M = self.params["M"]
+            res.append(rho_mat[int(t - 1)] * M)
+        if "V" in cls:
+            rho_vac = self.params["rho_vac"]
+            nu = self.params["nu"]
+            S = self.params["S"]
+            V = self.params["V"]
+            res.append(rho_vac[int(t - 1)] * V - nu[int(t - 1)] * S)
+        if "R" in cls:
+            rho_rec = self.params["rho_rec"]
+            R = self.params["R"]
+            res.append(rho_rec[int(t - 1)] * R)
+        if "I3" in cls:
+            S = self.params["S"]
+            N = self.params["N"]
+            beta_asym = self.params["beta_asym"]
+            beta_sym = self.params["beta_sym"]
+            beta_sev = self.params["beta_sev"]
+            I_asym = self.params["I_asym"]
+            I_sym = self.params["I_sym"]
+            I_sev = self.params["I_sev"]
 
-                res.append(
-                    [
-                        np.array(
-                            [
-                                -np.sum(
-                                    [
-                                        beta_asym[int(t - 1), j, l, k] * I_asym[j, l]
-                                        + beta_sym[int(t - 1), j, l, k] * I_sym[j, l]
-                                        + beta_sev[int(t - 1), j, l, k] * I_sev[j, l]
-                                        for l in range(self.K)
-                                    ]
-                                )
-                                * S[j, k]
-                                / N[j, k]
-                                for k in range(self.K)
-                            ]
-                        )
-                        for j in range(self.J)
-                    ]
-                )
+            res.append(
+                [
+                    np.array(
+                        [
+                            -np.sum(
+                                [
+                                    beta_asym[int(t - 1), j, l, k] * I_asym[j, l]
+                                    + beta_sym[int(t - 1), j, l, k] * I_sym[j, l]
+                                    + beta_sev[int(t - 1), j, l, k] * I_sev[j, l]
+                                    for l in range(self.K)
+                                ]
+                            )
+                            * S[j, k]
+                            / N[j, k]
+                            for k in range(self.K)
+                        ]
+                    )
+                    for j in range(self.J)
+                ]
+            )
+        elif "I2" in cls:
+            pass
+        elif "I1" in cls:
+            pass
 
         return np.array(res).sum(axis=0)
 
-    def _build_dEdt(self, t, class_simulation_type: str = "E2") -> Tuple:
+    def _build_dEdt(self, t) -> Tuple:
         """
         Wrap equations for E (exposed)
         Parameters
         ----------
         t : int
             Current timestep
-        class_simulation_type : str
-            Simulation Type
 
         Returns
         -------
@@ -137,133 +134,136 @@ class Simulator:
             Equation for class E based on simulation_type
 
         """
-        if "E2" in class_simulation_type:
+        cls = self.simulation_type.split()
+        if "E2" in cls:
             return self._build_dE_trdt(t), self._build_dE_ntdt(t)
-        elif "E1" in class_simulation_type:
+        elif "E1" in cls:
             pass
 
-    def _build_dE_ntdt(self, t, class_simulation_type: str = "E2 I3") -> np.ndarray:
+    def _build_dE_ntdt(self, t) -> np.ndarray:
         res = []
-        for cls in class_simulation_type.split():
-            if cls == "I3":
-                beta_asym = self.params["beta_asym"]
-                S = self.params["S"]
-                N = self.params["N"]
-                I_asym = self.params["I_asym"]
-                res.append(
-                    [
-                        np.array(
-                            [
-                                np.sum(
-                                    [
-                                        beta_asym[int(t - 1), j, l, k] * I_asym[j, l]
-                                        for l in range(self.K)
-                                    ]
-                                )
-                                * S[j, k]
-                                / N[j, k]
-                                for k in range(self.K)
-                            ]
-                        )
-                        for j in range(self.J)
-                    ]
-                )
+        cls = self.simulation_type.split()
+        if "I3" in cls:
+            beta_asym = self.params["beta_asym"]
+            S = self.params["S"]
+            N = self.params["N"]
+            I_asym = self.params["I_asym"]
+            res.append(
+                [
+                    np.array(
+                        [
+                            np.sum(
+                                [
+                                    beta_asym[int(t - 1), j, l, k] * I_asym[j, l]
+                                    for l in range(self.K)
+                                ]
+                            )
+                            * S[j, k]
+                            / N[j, k]
+                            for k in range(self.K)
+                        ]
+                    )
+                    for j in range(self.J)
+                ]
+            )
 
-                beta_sym = self.params["beta_sym"]
-                beta_sev = self.params["beta_sev"]
-                psi = self.params["psi"]
-                I_sym = self.params["I_sym"]
-                I_sev = self.params["I_sev"]
-                res.append(
-                    [
-                        np.array(
-                            [
-                                np.sum(
-                                    [
-                                        beta_sym[int(t - 1), j, l, k]
-                                        * (
-                                            1
-                                            - psi[int(t - 1), j, l]
-                                            * psi[int(t - 1), j, k]
-                                        )
-                                        * I_sym[j, l]
-                                        + beta_sev[int(t - 1), j, l, k]
-                                        * (
-                                            1
-                                            - psi[int(t - 1), j, l]
-                                            * psi[int(t - 1), j, k]
-                                        )
-                                        * I_sev[j, l]
-                                        for l in range(self.K)
-                                    ]
-                                )
-                                * S[j, k]
-                                / N[j, k]
-                                for k in range(self.K)
-                            ]
-                        )
-                        for j in range(self.J)
-                    ]
-                )
-            if cls == "E2":
-                epsilon = self.params["epsilon"]
-                Ent = self.params["E_nt"]
-                res.append(-1 * epsilon[int(t - 1)] * Ent)
+            beta_sym = self.params["beta_sym"]
+            beta_sev = self.params["beta_sev"]
+            psi = self.params["psi"]
+            I_sym = self.params["I_sym"]
+            I_sev = self.params["I_sev"]
+            res.append(
+                [
+                    np.array(
+                        [
+                            np.sum(
+                                [
+                                    beta_sym[int(t - 1), j, l, k]
+                                    * (
+                                        1
+                                        - psi[int(t - 1), j, l] * psi[int(t - 1), j, k]
+                                    )
+                                    * I_sym[j, l]
+                                    + beta_sev[int(t - 1), j, l, k]
+                                    * (
+                                        1
+                                        - psi[int(t - 1), j, l] * psi[int(t - 1), j, k]
+                                    )
+                                    * I_sev[j, l]
+                                    for l in range(self.K)
+                                ]
+                            )
+                            * S[j, k]
+                            / N[j, k]
+                            for k in range(self.K)
+                        ]
+                    )
+                    for j in range(self.J)
+                ]
+            )
+        elif "I" in cls:
+            pass
+
+        # method _build_dE_ntdt is only called if E2 is in simulation_type so this has to be executed anways
+        epsilon = self.params["epsilon"]
+        Ent = self.params["E_nt"]
+        res.append(-1 * epsilon[int(t - 1)] * Ent)
 
         return np.array(res).sum(axis=0)
 
-    def _build_dE_trdt(self, t, class_simulation_type: str = "E2 I3") -> np.ndarray:
+    def _build_dE_trdt(self, t) -> np.ndarray:
         res = []
-        for cls in class_simulation_type.split():
-            if cls == "I3":
-                beta_sym = self.params["beta_sym"]
-                beta_sev = self.params["beta_sev"]
-                psi = self.params["psi"]
-                I_sym = self.params["I_sym"]
-                I_sev = self.params["I_sev"]
-                S = self.params["S"]
-                N = self.params["N"]
-                res.append(
-                    [
-                        np.array(
-                            [
-                                np.sum(
-                                    [
-                                        beta_sym[int(t - 1), j, l, k]
-                                        * psi[int(t - 1), j, l]
-                                        * psi[int(t - 1), j, k]
-                                        * I_sym[j, l]
-                                        + beta_sev[int(t - 1), j, l, k]
-                                        * psi[int(t - 1), j, l]
-                                        * psi[int(t - 1), j, k]
-                                        * I_sev[j, l]
-                                        for l in range(self.K)
-                                    ]
-                                )
-                                * S[j, k]
-                                / N[j, k]
-                                for k in range(self.K)
-                            ]
-                        )
-                        for j in range(self.J)
-                    ]
-                )
-            if cls == "E2":
-                epsilon = self.params["epsilon"]
-                Etr = self.params["E_tr"]
-                res.append(-1 * epsilon[int(t - 1)] * Etr)
+        cls = self.simulation_type.split()
+        if "I3" in cls:
+            beta_sym = self.params["beta_sym"]
+            beta_sev = self.params["beta_sev"]
+            psi = self.params["psi"]
+            I_sym = self.params["I_sym"]
+            I_sev = self.params["I_sev"]
+            S = self.params["S"]
+            N = self.params["N"]
+            res.append(
+                [
+                    np.array(
+                        [
+                            np.sum(
+                                [
+                                    beta_sym[int(t - 1), j, l, k]
+                                    * psi[int(t - 1), j, l]
+                                    * psi[int(t - 1), j, k]
+                                    * I_sym[j, l]
+                                    + beta_sev[int(t - 1), j, l, k]
+                                    * psi[int(t - 1), j, l]
+                                    * psi[int(t - 1), j, k]
+                                    * I_sev[j, l]
+                                    for l in range(self.K)
+                                ]
+                            )
+                            * S[j, k]
+                            / N[j, k]
+                            for k in range(self.K)
+                        ]
+                    )
+                    for j in range(self.J)
+                ]
+            )
+        elif "I2" in cls:
+            pass
+
+        # method _build_dE_trdt is only called if E2 is in simulation_type so this has to be executed anways
+        epsilon = self.params["epsilon"]
+        Etr = self.params["E_tr"]
+        res.append(-1 * epsilon[int(t - 1)] * Etr)
 
         return np.array(res).sum(axis=0)
 
-    def _build_dIdt(self, t, class_simulation_type: str = "I3") -> Tuple:
+    def _build_dIdt(self, t) -> Tuple:
         """
         Wrap equation for I (infectious)
         Parameters
         ----------
         t : int
             Current timestep
-        class_simulation_type : str
-            Simulation Type
 
         Returns
         -------
@@ -271,113 +271,115 @@ class Simulator:
             Equation for class I based on simulation_type
 
         """
-        if "I3" in class_simulation_type:
+        cls = self.simulation_type.split()
+        if "I3" in cls and "Q3" in cls:
             return (
                 self._build_dI_asymdt(t),
                 self._build_dI_symdt(t),
                 self._build_dI_sevdt(t),
             )
-        elif "I2" in class_simulation_type:
+        elif "I2" in cls:
             return self._build_dI_asymdt(t), self._build_dI_symdt(t)
-        elif "I1" in class_simulation_type:
+        elif "I1" in cls:
             pass
 
-    def _build_dI_asymdt(self, t, class_simulation_type: str = "E2 I3") -> np.ndarray:
+    def _build_dI_asymdt(self, t) -> np.ndarray:
         res = []
-        for cls in class_simulation_type.split():
-            if cls == "E2":
-                epsilon = self.params["epsilon"]
-                Ent = self.params["E_nt"]
-                res.append(epsilon[int(t - 1)] * Ent)
-            if cls == "I3":
-                gamma_asym = self.params["gamma_asym"]
-                my_sym = self.params["my_sym"]
-                my_sev = self.params["my_sev"]
-                tau_asym = self.params["tau_asym"]
-                I_asym = self.params["I_asym"]
-                res.append(
-                    -1
-                    * (
-                        gamma_asym[int(t - 1)] * I_asym
-                        + my_sym[int(t - 1)] * I_asym
-                        + my_sev[int(t - 1)] * I_asym
-                        + tau_asym[int(t - 1)] * I_asym
-                    )
+        cls = self.simulation_type.split()
+        if "E2" in cls:
+            epsilon = self.params["epsilon"]
+            Ent = self.params["E_nt"]
+            res.append(epsilon[int(t - 1)] * Ent)
+        if "I3" in cls:
+            gamma_asym = self.params["gamma_asym"]
+            my_sym = self.params["my_sym"]
+            my_sev = self.params["my_sev"]
+            tau_asym = self.params["tau_asym"]
+            I_asym = self.params["I_asym"]
+            res.append(
+                -1
+                * (
+                    gamma_asym[int(t - 1)] * I_asym
+                    + my_sym[int(t - 1)] * I_asym
+                    + my_sev[int(t - 1)] * I_asym
+                    + tau_asym[int(t - 1)] * I_asym
                 )
+            )
+        elif "I2" in cls:
+            pass
 
         return np.array(res).sum(axis=0)
 
-    def _build_dI_symdt(self, t, class_simulation_type: str = "I3") -> np.ndarray:
+    def _build_dI_symdt(self, t) -> np.ndarray:
         res = []
-        for cls in class_simulation_type.split():
-            if cls == "I3":
-                my_sym = self.params["my_sym"]
-                my_sev = self.params["my_sev"]
-                gamma_sym = self.params["gamma_sym"]
-                tau_sym = self.params["tau_sym"]
-                I_asym = self.params["I_asym"]
-                I_sym = self.params["I_sym"]
-                I_sev = self.params["I_sev"]
-                res.append(
-                    my_sym[int(t - 1)] * I_asym
-                    + my_sym[int(t - 1)] * I_sev
-                    - (
-                        gamma_sym[int(t - 1)] * I_sym
-                        + my_sev[int(t - 1)] * I_sym
-                        + tau_sym[int(t - 1)] * I_sym
-                    )
-                )
-
-        return np.array(res).sum(axis=0)
-
-    def _build_dI_sevdt(self, t, class_simulation_type: str = "I3") -> np.ndarray:
-        res = []
-        for cls in class_simulation_type.split():
-            if cls == "I3":
-                my_sev = self.params["my_sev"]
-                gamma_sev_r = self.params["gamma_sev_r"]
-                gamma_sev_d = self.params["gamma_sev_d"]
-                my_sym = self.params["my_sym"]
-                tau_sev = self.params["tau_sev"]
-                I_asym = self.params["I_asym"]
-                I_sym = self.params["I_sym"]
-                I_sev = self.params["I_sev"]
-                Q_sev = self.params["Q_sev"]
-                res.append(
-                    my_sev[int(t - 1)] * I_asym
+        cls = self.simulation_type.split()
+        if "I3" in cls:
+            my_sym = self.params["my_sym"]
+            my_sev = self.params["my_sev"]
+            gamma_sym = self.params["gamma_sym"]
+            tau_sym = self.params["tau_sym"]
+            I_asym = self.params["I_asym"]
+            I_sym = self.params["I_sym"]
+            I_sev = self.params["I_sev"]
+            res.append(
+                my_sym[int(t - 1)] * I_asym
+                + my_sym[int(t - 1)] * I_sev
+                - (
+                    gamma_sym[int(t - 1)] * I_sym
                     + my_sev[int(t - 1)] * I_sym
-                    - 1
-                    * (
-                        [
-                            np.array(
-                                [
-                                    (
-                                        (
-                                            1
-                                            - self._calc_sigma(
-                                                t, j, k, I_sev[j, k], Q_sev[j, k]
-                                            )
-                                        )
-                                        * gamma_sev_r[int(t - 1), j, k]
-                                        + self._calc_sigma(
-                                            t, j, k, I_sev[j, k], Q_sev[j, k]
-                                        )
-                                        * gamma_sev_d[int(t - 1), j, k]
-                                    )
-                                    * I_sev[j, k]
-                                    for k in range(self.K)
-                                ]
-                            )
-                            for j in range(self.J)
-                        ]
-                        + my_sym[int(t - 1)] * I_sev
-                        + tau_sev[int(t - 1)] * I_sev
-                    )
+                    + tau_sym[int(t - 1)] * I_sym
                 )
+            )
+        elif "I2" in cls:
+            pass
 
         return np.array(res).sum(axis=0)
 
-    def _build_dQdt(self, t, class_simulation_type: str = "Q3") -> Tuple:
+    def _build_dI_sevdt(self, t) -> np.ndarray:
+        res = []
+        # I3 doesn't have to be checked because I_sev is only called if I3 and Q3 are in simulation_type
+        my_sev = self.params["my_sev"]
+        gamma_sev_r = self.params["gamma_sev_r"]
+        gamma_sev_d = self.params["gamma_sev_d"]
+        my_sym = self.params["my_sym"]
+        tau_sev = self.params["tau_sev"]
+        I_asym = self.params["I_asym"]
+        I_sym = self.params["I_sym"]
+        I_sev = self.params["I_sev"]
+        Q_sev = self.params["Q_sev"]
+        res.append(
+            my_sev[int(t - 1)] * I_asym
+            + my_sev[int(t - 1)] * I_sym
+            - 1
+            * (
+                [
+                    np.array(
+                        [
+                            (
+                                (
+                                    1
+                                    - self._calc_sigma(
+                                        t, j, k, I_sev[j, k], Q_sev[j, k]
+                                    )
+                                )
+                                * gamma_sev_r[int(t - 1), j, k]
+                                + self._calc_sigma(t, j, k, I_sev[j, k], Q_sev[j, k])
+                                * gamma_sev_d[int(t - 1), j, k]
+                            )
+                            * I_sev[j, k]
+                            for k in range(self.K)
+                        ]
+                    )
+                    for j in range(self.J)
+                ]
+                + my_sym[int(t - 1)] * I_sev
+                + tau_sev[int(t - 1)] * I_sev
+            )
+        )
+
+        return np.array(res).sum(axis=0)
+
+    def _build_dQdt(self, t) -> Tuple:
         """
         Wrap equation for class Q (quarantined)
         Parameters
@@ -393,220 +395,239 @@ class Simulator:
             Equation for class Q based on simulation_type
 
         """
-        if "Q3" in class_simulation_type:
+        cls = self.simulation_type.split()
+        if "Q3" in cls and "I3" in cls:
             return (
                 self._build_dQ_asymdt(t),
                 self._build_dQ_symdt(t),
                 self._build_dQ_sevdt(t),
             )
-        elif "Q2" in class_simulation_type:
+        elif "Q2" in cls:
             return self._build_dQ_asymdt(t), self._build_dQ_symdt(t)
-        elif "Q1" in class_simulation_type:
+        elif "Q1" in cls:
             pass
 
-    def _build_dQ_asymdt(
-        self, t, class_simulation_type: str = "E2 I3 Q3"
-    ) -> np.ndarray:
+    def _build_dQ_asymdt(self, t) -> np.ndarray:
         res = []
-        for cls in class_simulation_type.split():
-            if cls == "E2":
-                epsilon = self.params["epsilon"]
-                Etr = self.params["E_tr"]
-                res.append(epsilon[int(t - 1)] * Etr)
-            if cls == "I3":
-                tau_asym = self.params["tau_asym"]
-                I_asym = self.params["I_asym"]
-                res.append(tau_asym[int(t - 1)] * I_asym)
-            if cls == "Q3":
-                gamma_asym = self.params["gamma_asym"]
-                my_sym = self.params["my_sym"]
-                my_sev = self.params["my_sev"]
-                Q_asym = self.params["Q_asym"]
-                res.append(
-                    -1
-                    * (
-                        gamma_asym[int(t - 1)] * Q_asym
-                        + my_sym[int(t - 1)] * Q_asym
-                        + my_sev[int(t - 1)] * Q_asym
-                    )
-                )
+        cls = self.simulation_type.split()
+        if "E2" in cls:
+            epsilon = self.params["epsilon"]
+            Etr = self.params["E_tr"]
+            res.append(epsilon[int(t - 1)] * Etr)
+        if "I3" in cls:
+            tau_asym = self.params["tau_asym"]
+            I_asym = self.params["I_asym"]
+            res.append(tau_asym[int(t - 1)] * I_asym)
+        elif "I2" in cls:
+            pass
 
-        return np.array(res).sum(axis=0)
-
-    def _build_dQ_symdt(self, t, class_simulation_type: str = "I3 Q3") -> np.ndarray:
-        res = []
-        for cls in class_simulation_type.split():
-            if cls == "I3":
-                tau_sym = self.params["tau_sym"]
-                I_sym = self.params["I_sym"]
-                res.append(tau_sym[int(t - 1)] * I_sym)
-            if cls == "Q3":
-                my_sym = self.params["my_sym"]
-                gamma_sym = self.params["gamma_sym"]
-                my_sev = self.params["my_sev"]
-                Q_asym = self.params["Q_asym"]
-                Q_sev = self.params["Q_sev"]
-                Q_sym = self.params["Q_sym"]
-                res.append(
-                    my_sym[int(t - 1)] * Q_asym
-                    + my_sym[int(t - 1)] * Q_sev
-                    - (gamma_sym[int(t - 1)] * Q_sym + my_sev[int(t - 1)] * Q_sym)
-                )
-
-        return np.array(res).sum(axis=0)
-
-    def _build_dQ_sevdt(self, t, class_simulation_type: str = "I3 Q3") -> np.ndarray:
-        res = []
-        for cls in class_simulation_type.split():
-            if cls == "I3":
-                tau_sev = self.params["tau_sev"]
-                I_sev = self.params["I_sev"]
-                res.append(tau_sev[int(t - 1)] * I_sev)
-            if cls == "Q3":
-                my_sev = self.params["my_sev"]
-                my_sym = self.params["my_sym"]
-                gamma_sev_r = self.params["gamma_sev_r"]
-                gamma_sev_d = self.params["gamma_sev_d"]
-                Q_asym = self.params["Q_asym"]
-                Q_sym = self.params["Q_sym"]
-                Q_sev = self.params["Q_sev"]
-                I_sev = self.params["I_sev"]
-                res.append(
-                    my_sev[int(t - 1)] * Q_asym
-                    + my_sev[int(t - 1)] * Q_sym
-                    - 1
-                    * (
-                        [
-                            np.array(
-                                [
-                                    (
-                                        (
-                                            1
-                                            - self._calc_sigma(
-                                                t, j, k, I_sev[j, k], Q_sev[j, k]
-                                            )
-                                        )
-                                        * gamma_sev_r[int(t - 1), j, k]
-                                        + self._calc_sigma(
-                                            t, j, k, I_sev[j, k], Q_sev[j, k]
-                                        )
-                                        * gamma_sev_d[int(t - 1), j, k]
-                                    )
-                                    * Q_sev[j, k]
-                                    for k in range(self.K)
-                                ]
-                            )
-                            for j in range(self.J)
-                        ]
-                        + my_sym[int(t - 1)] * Q_sev
-                    )
-                )
-
-        return np.array(res).sum(axis=0)
-
-    def _build_dRdt(self, t, class_simulation_type: str = "I3 Q3 R") -> np.ndarray:
-        res = []
-        for cls in class_simulation_type.split():
-            if cls == "I3":
-                gamma_asym = self.params["gamma_asym"]
-                gamma_sym = self.params["gamma_sym"]
-                gamma_sev_r = self.params["gamma_sev_r"]
-                I_asym = self.params["I_asym"]
-                I_sym = self.params["I_sym"]
-                I_sev = self.params["I_sev"]
-                Q_sev = self.params["Q_sev"]
-                res.append(
-                    gamma_asym[int(t - 1)] * I_asym
-                    + gamma_sym[int(t - 1)] * I_sym
-                    + (
-                        [
-                            np.array(
-                                [
-                                    1
-                                    - self._calc_sigma(
-                                        t, j, k, I_sev[j, k], Q_sev[j, k]
-                                    )
-                                    for k in range(self.K)
-                                ]
-                            )
-                            for j in range(self.J)
-                        ]
-                    )
-                    * gamma_sev_r[int(t - 1)]
-                    * I_sev
-                )
-            if cls == "Q3":
-                gamma_asym = self.params["gamma_asym"]
-                gamma_sym = self.params["gamma_sym"]
-                gamma_sev_r = self.params["gamma_sev_r"]
-                Q_asym = self.params["Q_asym"]
-                Q_sym = self.params["Q_sym"]
-                Q_sev = self.params["Q_sev"]
-                I_sev = self.params["I_sev"]
-                res.append(
+        if "Q3" in cls:
+            gamma_asym = self.params["gamma_asym"]
+            my_sym = self.params["my_sym"]
+            my_sev = self.params["my_sev"]
+            Q_asym = self.params["Q_asym"]
+            res.append(
+                -1
+                * (
                     gamma_asym[int(t - 1)] * Q_asym
-                    + gamma_sym[int(t - 1)] * Q_sym
-                    + (
+                    + my_sym[int(t - 1)] * Q_asym
+                    + my_sev[int(t - 1)] * Q_asym
+                )
+            )
+        elif "Q2" in cls:
+            pass
+
+        return np.array(res).sum(axis=0)
+
+    def _build_dQ_symdt(self, t) -> np.ndarray:
+        res = []
+        cls = self.simulation_type.split()
+        if "I3" in cls:
+            tau_sym = self.params["tau_sym"]
+            I_sym = self.params["I_sym"]
+            res.append(tau_sym[int(t - 1)] * I_sym)
+        elif "I" in cls:
+            pass
+
+        if "Q3" in cls:
+            my_sym = self.params["my_sym"]
+            gamma_sym = self.params["gamma_sym"]
+            my_sev = self.params["my_sev"]
+            Q_asym = self.params["Q_asym"]
+            Q_sev = self.params["Q_sev"]
+            Q_sym = self.params["Q_sym"]
+            res.append(
+                my_sym[int(t - 1)] * Q_asym
+                + my_sym[int(t - 1)] * Q_sev
+                - (gamma_sym[int(t - 1)] * Q_sym + my_sev[int(t - 1)] * Q_sym)
+            )
+        elif "Q2" in cls:
+            pass
+
+        return np.array(res).sum(axis=0)
+
+    def _build_dQ_sevdt(self, t) -> np.ndarray:
+        res = []
+        # Q3 doesn't have to be checked because Q_sev is only called if I3 and Q3 are in simulation_type
+        tau_sev = self.params["tau_sev"]
+        I_sev = self.params["I_sev"]
+        res.append(tau_sev[int(t - 1)] * I_sev)
+
+        my_sev = self.params["my_sev"]
+        my_sym = self.params["my_sym"]
+        gamma_sev_r = self.params["gamma_sev_r"]
+        gamma_sev_d = self.params["gamma_sev_d"]
+        Q_asym = self.params["Q_asym"]
+        Q_sym = self.params["Q_sym"]
+        Q_sev = self.params["Q_sev"]
+        I_sev = self.params["I_sev"]
+        res.append(
+            my_sev[int(t - 1)] * Q_asym
+            + my_sev[int(t - 1)] * Q_sym
+            - 1
+            * (
+                [
+                    np.array(
                         [
-                            np.array(
-                                [
+                            (
+                                (
                                     1
                                     - self._calc_sigma(
                                         t, j, k, I_sev[j, k], Q_sev[j, k]
                                     )
-                                    for k in range(self.K)
-                                ]
+                                )
+                                * gamma_sev_r[int(t - 1), j, k]
+                                + self._calc_sigma(t, j, k, I_sev[j, k], Q_sev[j, k])
+                                * gamma_sev_d[int(t - 1), j, k]
                             )
-                            for j in range(self.J)
+                            * Q_sev[j, k]
+                            for k in range(self.K)
                         ]
                     )
-                    * gamma_sev_r[int(t - 1)]
-                    * Q_sev
-                )
-            if cls == "R":
-                rho_rec = self.params["rho_rec"]
-                R = self.params["R"]
-                res.append(-1 * rho_rec[int(t - 1)] * R)
+                    for j in range(self.J)
+                ]
+                + my_sym[int(t - 1)] * Q_sev
+            )
+        )
 
         return np.array(res).sum(axis=0)
 
-    def _build_dDdt(self, t, class_simulation_type: str = "I3 Q3") -> np.ndarray:
+    def _build_dRdt(self, t) -> np.ndarray:
         res = []
-        for cls in class_simulation_type.split():
-            if cls == "I3":
-                gamma_sev_d = self.params["gamma_sev_d"]
-                I_sev = self.params["I_sev"]
-                Q_sev = self.params["Q_sev"]
-                res.append(
+        cls = self.simulation_type.split()
+        if "I3" in cls:
+            gamma_asym = self.params["gamma_asym"]
+            gamma_sym = self.params["gamma_sym"]
+            gamma_sev_r = self.params["gamma_sev_r"]
+            I_asym = self.params["I_asym"]
+            I_sym = self.params["I_sym"]
+            I_sev = self.params["I_sev"]
+            Q_sev = self.params["Q_sev"]
+            res.append(
+                gamma_asym[int(t - 1)] * I_asym
+                + gamma_sym[int(t - 1)] * I_sym
+                + (
                     [
                         np.array(
                             [
-                                self._calc_sigma(t, j, k, I_sev[j, k], Q_sev[j, k])
-                                * gamma_sev_d[int(t - 1), j, k]
-                                * I_sev[j, k]
+                                1 - self._calc_sigma(t, j, k, I_sev[j, k], Q_sev[j, k])
                                 for k in range(self.K)
                             ]
                         )
                         for j in range(self.J)
                     ]
                 )
-            if cls == "Q3":
-                gamma_sev_d = self.params["gamma_sev_d"]
-                I_sev = self.params["I_sev"]
-                Q_sev = self.params["Q_sev"]
-                res.append(
+                * gamma_sev_r[int(t - 1)]
+                * I_sev
+            )
+        elif "I2" in cls:
+            pass
+        elif "I1" in cls:
+            pass
+
+        if "Q3" in cls:
+            gamma_asym = self.params["gamma_asym"]
+            gamma_sym = self.params["gamma_sym"]
+            gamma_sev_r = self.params["gamma_sev_r"]
+            Q_asym = self.params["Q_asym"]
+            Q_sym = self.params["Q_sym"]
+            Q_sev = self.params["Q_sev"]
+            I_sev = self.params["I_sev"]
+            res.append(
+                gamma_asym[int(t - 1)] * Q_asym
+                + gamma_sym[int(t - 1)] * Q_sym
+                + (
                     [
                         np.array(
                             [
-                                self._calc_sigma(t, j, k, I_sev[j, k], Q_sev[j, k])
-                                * gamma_sev_d[int(t - 1), j, k]
-                                * Q_sev[j, k]
+                                1 - self._calc_sigma(t, j, k, I_sev[j, k], Q_sev[j, k])
                                 for k in range(self.K)
                             ]
                         )
                         for j in range(self.J)
                     ]
                 )
+                * gamma_sev_r[int(t - 1)]
+                * Q_sev
+            )
+        elif "Q2" in cls:
+            pass
+        elif "Q1" in cls:
+            pass
+
+        # method _build_dR_dt is only called if R is in simulation_type so this has to be executed anways
+        rho_rec = self.params["rho_rec"]
+        R = self.params["R"]
+        res.append(-1 * rho_rec[int(t - 1)] * R)
+
+        return np.array(res).sum(axis=0)
+
+    def _build_dDdt(self, t) -> np.ndarray:
+        res = []
+        cls = self.simulation_type.split()
+        if "I3" in cls:
+            gamma_sev_d = self.params["gamma_sev_d"]
+            I_sev = self.params["I_sev"]
+            Q_sev = self.params["Q_sev"]
+            res.append(
+                [
+                    np.array(
+                        [
+                            self._calc_sigma(t, j, k, I_sev[j, k], Q_sev[j, k])
+                            * gamma_sev_d[int(t - 1), j, k]
+                            * I_sev[j, k]
+                            for k in range(self.K)
+                        ]
+                    )
+                    for j in range(self.J)
+                ]
+            )
+        elif "I2" in cls:
+            pass
+        elif "I1" in cls:
+            pass
+
+        if "Q3" in cls:
+            gamma_sev_d = self.params["gamma_sev_d"]
+            I_sev = self.params["I_sev"]
+            Q_sev = self.params["Q_sev"]
+            res.append(
+                [
+                    np.array(
+                        [
+                            self._calc_sigma(t, j, k, I_sev[j, k], Q_sev[j, k])
+                            * gamma_sev_d[int(t - 1), j, k]
+                            * Q_sev[j, k]
+                            for k in range(self.K)
+                        ]
+                    )
+                    for j in range(self.J)
+                ]
+            )
+        elif "Q2" in cls:
+            pass
+        elif "Q1" in cls:
+            pass
 
         return np.array(res).sum(axis=0)
 
@@ -695,7 +716,6 @@ class Simulator:
             result.append(np.zeros((self.J, self.K)))
 
         return np.array(result).ravel()
-        # TODO implement different simulation types
 
     def _run_ode_system(self, params) -> dict:
         """
@@ -772,7 +792,10 @@ class Simulator:
                 self.params["I"],
                 self.params["R"],
             ]
-        if self.simulation_type == "M V S E2 I3 Q3 R D" or self.simulation_type == "full":
+        if (
+            self.simulation_type == "M V S E2 I3 Q3 R D"
+            or self.simulation_type == "full"
+        ):
             return [
                 self.params["M"],
                 self.params["V"],
@@ -830,7 +853,10 @@ class Simulator:
 
         result = [
             np.array(
-                [sol[i, :].reshape((self.param_count, self.J, self.K))[j] for i in range(len(t))]
+                [
+                    sol[i, :].reshape((self.param_count, self.J, self.K))[j]
+                    for i in range(len(t))
+                ]
             )
             for j in range(13)
         ]
