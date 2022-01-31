@@ -144,7 +144,7 @@ class Controller:
         J in [0, 1]                   # geographic locations
         K in [0, 1]                   # age groups
         """
-        self.params = {
+        self._params = {
             "M": None,
             "V": None,
             "R": None,
@@ -196,8 +196,8 @@ class Controller:
         """
         Resets the current controllers paramter dict to None
         """
-        for key in self.params:
-            self.params[key] = None
+        for key in self._params:
+            self._params[key] = None
 
     def _load_default_values(self, default_values_path) -> dict:
         try:
@@ -281,7 +281,7 @@ class Controller:
             params["J"]
         except AttributeError as ae:
             # TODO logging info or raise Error
-            self.params["J"] = self.default_values["J"]
+            self._params["J"] = self.default_values["J"]
 
         try:
             params["K"]
@@ -289,7 +289,7 @@ class Controller:
             # TODO logging info
             for key in params:
                 if key not in ["K", "J", "beta"]:
-                    self.params["K"] = len(params[key][0])
+                    self._params["K"] = len(params[key][0])
                     break
 
         # make sure entities and age groups are correct in every parameter
@@ -305,6 +305,29 @@ class Controller:
                 # TODO check correct shape of beta
                 pass
 
+            # check if classes add up to one
+            one = 1.0
+            for key in {
+                "M",
+                "V",
+                "S",
+                "E",
+                "E2",
+                "I",
+                "I2",
+                "I3",
+                "Q",
+                "Q2",
+                "Q3",
+                "R",
+                "D",
+            } & set(params.keys()):
+                one -= params[key]
+            if not -1.0e-14 < one < 1.0e-14:
+                raise ValueError(
+                    "Epidemiological classes do not add up to one." "Check input parameters."
+                )
+
     def initialize_parameters(self, params: dict = None) -> dict:
         """
         Initializes all parameters either by default or by setting it with supplied params dict
@@ -314,16 +337,16 @@ class Controller:
             params = {}
         for key, val in self.default_values.items():
             if key in params:
-                self.params[key] = params[key]
+                self._params[key] = params[key]
             else:
-                self.params[key] = val
+                self._params[key] = val
 
         # make sure types are clear first under valid_domain and then initialize within bounds
-        self.check_params(self.params)
+        self.check_params(self._params)
 
-        return self.params
+        return self._params
 
-    def set_values(self, params: dict) -> None:
+    def set_params(self, params: dict) -> None:
         """
         Sets a class attribute's value
 
@@ -335,11 +358,11 @@ class Controller:
             value : Any
                 value of class attribute described by key
         """
-        self.check_params(params)
         for key, val in params:
-            self.params[key] = val
+            self._params[key] = val
+        self.check_params(self._params)
 
-    def get_values(self, keys: list) -> dict:
+    def get_params(self, keys: list = None) -> dict:
         """
         Prepares class attributes for retrieval and makes sure values are valid
         
@@ -348,4 +371,7 @@ class Controller:
             keys : list
                 list of strings, that are keys for parameters
         """
-        return {key: self.params[key] for key in keys}
+        if keys:
+            return {key: self._params[key] for key in keys}
+        else:
+            return self._params

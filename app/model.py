@@ -24,11 +24,11 @@ class Model:
         self.controller = Controller(
             default_values_path=default_values_path, default_domains_path=default_domains_path
         )
+        self.get_params = self.controller.get_params
         self.simulator = Simulator()
         self.view = View()
 
-        self._fill_missing_values = fill_missing_values
-        self._update_params(params)
+        self._update_params(params, fill_missing_values, reset=True)
 
     def _update_view(self) -> None:
         """
@@ -37,22 +37,22 @@ class Model:
         # TODO implement
         ...
 
-    def _update_params(self, params) -> None:
+    def _update_params(self, params, fill_missing_values, reset=False) -> None:
         """
         Updates the controller if new data/parameters is/are available. 
-        Sets self.controller.params to current parameter dict.
+        Sets self.controller._params to current parameter dict.
         """
-        if self._fill_missing_values:
+        if reset:
+            self.controller.reset()
+
+        if fill_missing_values:
             # build complete parameter set with controller
             # add default values to given params dict
-            # TODO Warning if incomplete
-            # (might be relevant if values coming back from simulation are incomplete,
-            # even though they should be; Could be solved by setting self._fill_missing_values
-            # to False after the first simulation in self.run())
-            self.controller.params = self.controller.initialize_parameters(params)
+            self.controller.initialize_parameters(params)
         else:
+            # add given params to already existing parameter dict
             self.controller.check_params(params)
-            self.controller.params = params
+            self.controller.set_params(params)
 
     def detect_simulation_type(self, params: dict) -> str:
         """
@@ -139,10 +139,12 @@ class Model:
         Retrieves parameter, runs the MVRSEIQRI simulation and updates the view.
         This is equivalent to simulating one timestep.
         """
-        # call simulator with simulation type
-        simulation_type = self.detect_simulation_type(self.controller.params)
-        params = self.simulator.run(params=self.controller.params, simulation_type=simulation_type)
-        self._update_params(params)
+
+        # call simulator with simulation type and current parameters
+        params = self.controller.get_params()
+        simulation_type = self.detect_simulation_type(params)
+        params = self.simulator.run(params=params, simulation_type=simulation_type)
+        self._update_params(params=params, fill_missing_values=False, reset=False)
 
         # update the view
-        self._update_view(self.controller.params)
+        self._update_view(self.controller.get_params())
