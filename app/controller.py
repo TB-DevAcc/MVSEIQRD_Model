@@ -311,8 +311,8 @@ class Controller:
             else:
                 self._params[key] = self.default_values[key]
 
-        # TODO load data from importer
-        # base_data = Importer()._get_base_values()
+        # TODO load data from DataHandler and put them into params
+        # base_data = DataHandler()._get_base_values()
 
         # make sure types are clear first under valid_domain and then initialize within bounds
         self.check_params(self._params)

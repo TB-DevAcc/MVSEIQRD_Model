@@ -1,9 +1,8 @@
 import pandas as pd
-import json
 import numpy as np
 
 
-class Importer:
+class DataHandler:
     def __init__(
             self,
             default_age_group_data_path='simulation_test/altersgruppen.csv',
