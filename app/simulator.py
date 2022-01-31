@@ -1,6 +1,7 @@
 import numpy as np
 import scipy
 from scipy.integrate import DOP853, RK23, RK45, odeint, solve_ivp
+from typing import Tuple
 
 
 class Simulator:
@@ -20,7 +21,7 @@ class Simulator:
         params : dict
             Parameters for the simulation
         simulation_type : str
-            Type of simulation to be run e.g. "S I", "S E I R", "I3 S E2 I3 Q3 R I"
+            Type of simulation to be run e.g. "S I", "S E I R", "M V S E2 I3 Q3 R D"
 
         Returns
         -------
@@ -32,8 +33,17 @@ class Simulator:
         # TODO make sure attribute error doesn't crash this
         self.J = params["J"]
         self.K = params["K"]
+        self.param_count = self._count_params()
 
         return self._run_ode_system(params)
+
+    def _count_params(self):
+        if self.simulation_type == "S I":
+            return 2
+        if self.simulation_type == "S E I R":
+            return 4
+        if self.simulation_type == "M V S E2 I3 Q3 R D":
+            return 13
 
     def _build_dMdt(self, t, class_simulation_type: str = "M") -> np.ndarray:
         res = []
@@ -111,7 +121,7 @@ class Simulator:
 
         return np.array(res).sum(axis=0)
 
-    def _build_dEdt(self, t, class_simulation_type: str = "E2") -> np.ndarray:
+    def _build_dEdt(self, t, class_simulation_type: str = "E2") -> Tuple:
         """
         Wrap equations for E (exposed)
         Parameters
@@ -123,7 +133,7 @@ class Simulator:
 
         Returns
         -------
-        np.ndarray
+        Tuple
             Equation for class E based on simulation_type
 
         """
@@ -245,7 +255,7 @@ class Simulator:
 
         return np.array(res).sum(axis=0)
 
-    def _build_dIdt(self, t, class_simulation_type: str = "I3") -> np.ndarray:
+    def _build_dIdt(self, t, class_simulation_type: str = "I3") -> Tuple:
         """
         Wrap equation for I (infectious)
         Parameters
@@ -257,12 +267,16 @@ class Simulator:
 
         Returns
         -------
-        np.ndarray
+        Tuple
             Equation for class I based on simulation_type
 
         """
         if "I3" in class_simulation_type:
-            return self._build_dI_asymdt(t), self._build_dI_symdt(t), self._build_dI_sevdt(t)
+            return (
+                self._build_dI_asymdt(t),
+                self._build_dI_symdt(t),
+                self._build_dI_sevdt(t),
+            )
         elif "I2" in class_simulation_type:
             return self._build_dI_asymdt(t), self._build_dI_symdt(t)
         elif "I1" in class_simulation_type:
@@ -363,7 +377,7 @@ class Simulator:
 
         return np.array(res).sum(axis=0)
 
-    def _build_dQdt(self, t, class_simulation_type: str = "Q3") -> np.ndarray:
+    def _build_dQdt(self, t, class_simulation_type: str = "Q3") -> Tuple:
         """
         Wrap equation for class Q (quarantined)
         Parameters
@@ -375,18 +389,24 @@ class Simulator:
 
         Returns
         -------
-        np.ndarray
+        Tuple
             Equation for class Q based on simulation_type
 
         """
         if "Q3" in class_simulation_type:
-            return self._build_dQ_asymdt(t), self._build_dQ_symdt(t), self._build_dQ_sevdt(t)
+            return (
+                self._build_dQ_asymdt(t),
+                self._build_dQ_symdt(t),
+                self._build_dQ_sevdt(t),
+            )
         elif "Q2" in class_simulation_type:
             return self._build_dQ_asymdt(t), self._build_dQ_symdt(t)
         elif "Q1" in class_simulation_type:
             pass
 
-    def _build_dQ_asymdt(self, t, class_simulation_type: str = "E2 I3 Q3") -> np.ndarray:
+    def _build_dQ_asymdt(
+        self, t, class_simulation_type: str = "E2 I3 Q3"
+    ) -> np.ndarray:
         res = []
         for cls in class_simulation_type.split():
             if cls == "E2":
@@ -603,45 +623,76 @@ class Simulator:
         # Simulation doesn't do useful things if self.params won't change
         # -> so this reshape is necessary to set self.params to the calculated data from the previous iteration
         # so the current iteration can use these calculated data to use them in the next calculation
-        (
-            self.params["M"],
-            self.params["V"],
-            self.params["S"],
-            self.params["E_tr"],
-            self.params["E_nt"],
-            self.params["I_asym"],
-            self.params["I_sym"],
-            self.params["I_sev"],
-            self.params["Q_asym"],
-            self.params["Q_sym"],
-            self.params["Q_sev"],
-            self.params["R"],
-            self.params["D"],
-        ) = params.reshape((13, self.J, self.K))
+        if self.simulation_type == "S I":
+            pass
+        elif self.simulation_type == "S E I R":
+            pass
+        if (
+            self.simulation_type == "M V S E2 I3 Q3 R D"
+            or self.simulation_type == "full"
+        ):
+            (
+                self.params["M"],
+                self.params["V"],
+                self.params["S"],
+                self.params["E_tr"],
+                self.params["E_nt"],
+                self.params["I_asym"],
+                self.params["I_sym"],
+                self.params["I_sev"],
+                self.params["Q_asym"],
+                self.params["Q_sym"],
+                self.params["Q_sev"],
+                self.params["R"],
+                self.params["D"],
+            ) = params.reshape((self.param_count, self.J, self.K))
 
         result = []
         if "M" in self.simulation_type or self.simulation_type == "full":
             result.append(self._build_dMdt(t))
+        else:
+            result.append(np.zeros((self.J, self.K)))
+
         if "V" in self.simulation_type or self.simulation_type == "full":
             result.append(self._build_dVdt(t))
+        else:
+            result.append(np.zeros((self.J, self.K)))
+
         if "S" in self.simulation_type or self.simulation_type == "full":
             result.append(self._build_dSdt(t))
+        else:
+            result.append(np.zeros((self.J, self.K)))
+
         if "E" in self.simulation_type or self.simulation_type == "full":
             e = self._build_dEdt(t)
             for sub_types in e:
                 result.append(sub_types)
+        else:
+            result.append(np.zeros((self.J, self.K)))
+
         if "I" in self.simulation_type or self.simulation_type == "full":
             i = self._build_dIdt(t)
             for sub_types in i:
                 result.append(sub_types)
+        else:
+            result.append(np.zeros((self.J, self.K)))
+
         if "Q" in self.simulation_type or self.simulation_type == "full":
             q = self._build_dQdt(t)
             for sub_types in q:
                 result.append(sub_types)
+        else:
+            result.append(np.zeros((self.J, self.K)))
+
         if "R" in self.simulation_type or self.simulation_type == "full":
             result.append(self._build_dRdt(t))
+        else:
+            result.append(np.zeros((self.J, self.K)))
+
         if "D" in self.simulation_type or self.simulation_type == "full":
             result.append(self._build_dDdt(t))
+        else:
+            result.append(np.zeros((self.J, self.K)))
 
         return np.array(result).ravel()
         # TODO implement different simulation types
@@ -704,6 +755,40 @@ class Simulator:
         """
         return self._simulate_ivp(t, params, scipy.integrate.DOP853)
 
+    def _prepare_y0(self) -> list:
+        """
+        Prepare start values for the current iteration
+        Returns
+        -------
+        list
+            Start values for current iteration
+        """
+        if self.simulation_type == "S I":
+            return [self.params["S"], self.params["I"]]
+        if self.simulation_type == "S E I R":
+            return [
+                self.params["S"],
+                self.params["E"],
+                self.params["I"],
+                self.params["R"],
+            ]
+        if self.simulation_type == "M V S E2 I3 Q3 R D" or self.simulation_type == "full":
+            return [
+                self.params["M"],
+                self.params["V"],
+                self.params["S"],
+                self.params["E_tr"],
+                self.params["E_nt"],
+                self.params["I_asym"],
+                self.params["I_sym"],
+                self.params["I_sev"],
+                self.params["Q_asym"],
+                self.params["Q_sym"],
+                self.params["Q_sev"],
+                self.params["R"],
+                self.params["D"],
+            ]
+
     def _simulate_ivp(self, t, params, method):
         """
         Solve ODE system with solve_ivp
@@ -714,29 +799,16 @@ class Simulator:
             fun=self._build_ode_system,
             t_span=[t[0], t[-1]],
             t_eval=t,
-            y0=np.array(
-                [
-                    self.params["M"],
-                    self.params["V"],
-                    self.params["S"],
-                    self.params["E_tr"],
-                    self.params["E_nt"],
-                    self.params["I_asym"],
-                    self.params["I_sym"],
-                    self.params["I_sev"],
-                    self.params["Q_asym"],
-                    self.params["Q_sym"],
-                    self.params["Q_sev"],
-                    self.params["R"],
-                    self.params["D"],
-                ]
-            ).ravel(),
+            y0=np.array(self._prepare_y0()).ravel(),
             method=method,
         )
 
         result = [
             np.array(
-                [sol.y[:, i].reshape((13, self.J, self.K))[j] for i in range(len(t))]
+                [
+                    sol.y[:, i].reshape((self.param_count, self.J, self.K))[j]
+                    for i in range(len(t))
+                ]
             )
             for j in range(13)
         ]
@@ -752,29 +824,13 @@ class Simulator:
         sol = odeint(
             func=ode_system,
             t=t,
-            y0=np.array(
-                [
-                    self.params["M"],
-                    self.params["V"],
-                    self.params["S"],
-                    self.params["E_tr"],
-                    self.params["E_nt"],
-                    self.params["I_asym"],
-                    self.params["I_sym"],
-                    self.params["I_sev"],
-                    self.params["Q_asym"],
-                    self.params["Q_sym"],
-                    self.params["Q_sev"],
-                    self.params["R"],
-                    self.params["D"],
-                ]
-            ).ravel(),
+            y0=np.array(self._prepare_y0()).ravel(),
             tfirst=True,
         )
 
         result = [
             np.array(
-                [sol[i, :].reshape((13, self.J, self.K))[j] for i in range(len(t))]
+                [sol[i, :].reshape((self.param_count, self.J, self.K))[j] for i in range(len(t))]
             )
             for j in range(13)
         ]
