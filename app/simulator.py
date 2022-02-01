@@ -29,7 +29,10 @@ class Simulator:
             New parameters
         """
         self.params = params
-        self.simulation_type = simulation_type
+        if simulation_type == "full":
+            self.simulation_type = "M V S E2 I3 Q3 R D"
+        else:
+            self.simulation_type = simulation_type
         # TODO make sure attribute error doesn't crash this
         self.J = params["J"]
         self.K = params["K"]
@@ -115,7 +118,7 @@ class Simulator:
             )
         elif "I2" in cls:
             pass
-        elif "I1" in cls:
+        elif "I" in cls:
             pass
 
         return np.array(res).sum(axis=0)
@@ -137,7 +140,7 @@ class Simulator:
         cls = self.simulation_type.split()
         if "E2" in cls:
             return self._build_dE_trdt(t), self._build_dE_ntdt(t)
-        elif "E1" in cls:
+        elif "E" in cls:
             pass
 
     def _build_dE_ntdt(self, t) -> np.ndarray:
@@ -280,7 +283,7 @@ class Simulator:
             )
         elif "I2" in cls:
             return self._build_dI_asymdt(t), self._build_dI_symdt(t)
-        elif "I1" in cls:
+        elif "I" in cls:
             pass
 
     def _build_dI_asymdt(self, t) -> np.ndarray:
@@ -404,7 +407,7 @@ class Simulator:
             )
         elif "Q2" in cls:
             return self._build_dQ_asymdt(t), self._build_dQ_symdt(t)
-        elif "Q1" in cls:
+        elif "Q" in cls:
             pass
 
     def _build_dQ_asymdt(self, t) -> np.ndarray:
@@ -446,7 +449,7 @@ class Simulator:
             tau_sym = self.params["tau_sym"]
             I_sym = self.params["I_sym"]
             res.append(tau_sym[int(t - 1)] * I_sym)
-        elif "I" in cls:
+        elif "I2" in cls:
             pass
 
         if "Q3" in cls:
@@ -542,7 +545,7 @@ class Simulator:
             )
         elif "I2" in cls:
             pass
-        elif "I1" in cls:
+        elif "I" in cls:
             pass
 
         if "Q3" in cls:
@@ -572,7 +575,7 @@ class Simulator:
             )
         elif "Q2" in cls:
             pass
-        elif "Q1" in cls:
+        elif "Q" in cls:
             pass
 
         # method _build_dR_dt is only called if R is in simulation_type so this has to be executed anways
@@ -604,7 +607,7 @@ class Simulator:
             )
         elif "I2" in cls:
             pass
-        elif "I1" in cls:
+        elif "I" in cls:
             pass
 
         if "Q3" in cls:
@@ -626,7 +629,7 @@ class Simulator:
             )
         elif "Q2" in cls:
             pass
-        elif "Q1" in cls:
+        elif "Q" in cls:
             pass
 
         return np.array(res).sum(axis=0)
@@ -650,7 +653,6 @@ class Simulator:
             pass
         if (
             self.simulation_type == "M V S E2 I3 Q3 R D"
-            or self.simulation_type == "full"
         ):
             (
                 self.params["M"],
@@ -669,48 +671,48 @@ class Simulator:
             ) = params.reshape((self.param_count, self.J, self.K))
 
         result = []
-        if "M" in self.simulation_type or self.simulation_type == "full":
+        if "M" in self.simulation_type:
             result.append(self._build_dMdt(t))
         else:
             result.append(np.zeros((self.J, self.K)))
 
-        if "V" in self.simulation_type or self.simulation_type == "full":
+        if "V" in self.simulation_type:
             result.append(self._build_dVdt(t))
         else:
             result.append(np.zeros((self.J, self.K)))
 
-        if "S" in self.simulation_type or self.simulation_type == "full":
+        if "S" in self.simulation_type:
             result.append(self._build_dSdt(t))
         else:
             result.append(np.zeros((self.J, self.K)))
 
-        if "E" in self.simulation_type or self.simulation_type == "full":
+        if "E" in self.simulation_type:
             e = self._build_dEdt(t)
             for sub_types in e:
                 result.append(sub_types)
         else:
             result.append(np.zeros((self.J, self.K)))
 
-        if "I" in self.simulation_type or self.simulation_type == "full":
+        if "I" in self.simulation_type:
             i = self._build_dIdt(t)
             for sub_types in i:
                 result.append(sub_types)
         else:
             result.append(np.zeros((self.J, self.K)))
 
-        if "Q" in self.simulation_type or self.simulation_type == "full":
+        if "Q" in self.simulation_type:
             q = self._build_dQdt(t)
             for sub_types in q:
                 result.append(sub_types)
         else:
             result.append(np.zeros((self.J, self.K)))
 
-        if "R" in self.simulation_type or self.simulation_type == "full":
+        if "R" in self.simulation_type:
             result.append(self._build_dRdt(t))
         else:
             result.append(np.zeros((self.J, self.K)))
 
-        if "D" in self.simulation_type or self.simulation_type == "full":
+        if "D" in self.simulation_type:
             result.append(self._build_dDdt(t))
         else:
             result.append(np.zeros((self.J, self.K)))
@@ -794,7 +796,6 @@ class Simulator:
             ]
         if (
             self.simulation_type == "M V S E2 I3 Q3 R D"
-            or self.simulation_type == "full"
         ):
             return [
                 self.params["M"],
