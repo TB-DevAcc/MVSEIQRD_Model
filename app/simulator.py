@@ -493,12 +493,12 @@ class Simulator:
         ----------
         t : int
             Current timestep
-       
+
         Returns
         -------
         Tuple
             Equation for class Q based on simulation_type
-            
+
         """
         cls = self.simulation_type.split()
         if "Q3" in cls and "I3" in cls:
@@ -572,30 +572,30 @@ class Simulator:
             Calculated values of equation of Qsym for current iteration
         """
         res = []
-          cls = self.simulation_type.split()
-          if "I3" in cls:
-              tau_sym = self.params["tau_sym"]
-              I_sym = self.params["I_sym"]
-              res.append(tau_sym[int(t - 1)] * I_sym)
-          elif "I2" in cls:
-              pass
+        cls = self.simulation_type.split()
+        if "I3" in cls:
+            tau_sym = self.params["tau_sym"]
+            I_sym = self.params["I_sym"]
+            res.append(tau_sym[int(t - 1)] * I_sym)
+        elif "I2" in cls:
+            pass
 
-          if "Q3" in cls:
-              my_sym = self.params["my_sym"]
-              gamma_sym = self.params["gamma_sym"]
-              my_sev = self.params["my_sev"]
-              Q_asym = self.params["Q_asym"]
-              Q_sev = self.params["Q_sev"]
-              Q_sym = self.params["Q_sym"]
-              res.append(
-                  my_sym[int(t - 1)] * Q_asym
-                  + my_sym[int(t - 1)] * Q_sev
-                  - (gamma_sym[int(t - 1)] * Q_sym + my_sev[int(t - 1)] * Q_sym)
-              )
-          elif "Q2" in cls:
-              pass
+        if "Q3" in cls:
+            my_sym = self.params["my_sym"]
+            gamma_sym = self.params["gamma_sym"]
+            my_sev = self.params["my_sev"]
+            Q_asym = self.params["Q_asym"]
+            Q_sev = self.params["Q_sev"]
+            Q_sym = self.params["Q_sym"]
+            res.append(
+                my_sym[int(t - 1)] * Q_asym
+                + my_sym[int(t - 1)] * Q_sev
+                - (gamma_sym[int(t - 1)] * Q_sym + my_sev[int(t - 1)] * Q_sym)
+            )
+        elif "Q2" in cls:
+            pass
 
-          return np.array(res).sum(axis=0)
+        return np.array(res).sum(axis=0)
 
     def _build_dQ_sevdt(self, t) -> np.ndarray:
         """
@@ -825,9 +825,7 @@ class Simulator:
             pass
         elif self.simulation_type == "S E I R":
             pass
-        if (
-            self.simulation_type == "M V S E2 I3 Q3 R D"
-        ):
+        if self.simulation_type == "M V S E2 I3 Q3 R D":
             (
                 self.params["M"],
                 self.params["V"],
@@ -939,10 +937,10 @@ class Simulator:
             return sigma[int(t - 1), j, k]
         else:
             return (
-                   sigma[int(t - 1), j, k] * (N[j, k] / N_total[j]) * B[j]
-                   + (I_sev_jk + Q_sev_jk) * N[j, k]
-                   - (N[j, k] / N_total[j]) * B[j]
-           ) / ((I_sev_jk + Q_sev_jk) * N[j, k])
+                sigma[int(t - 1), j, k] * (N[j, k] / N_total[j]) * B[j]
+                + (I_sev_jk + Q_sev_jk) * N[j, k]
+                - (N[j, k] / N_total[j]) * B[j]
+            ) / ((I_sev_jk + Q_sev_jk) * N[j, k])
 
     def _simulate_RK45(self, t, params) -> np.ndarray:
         """
@@ -1015,9 +1013,7 @@ class Simulator:
                 self.params["I"],
                 self.params["R"],
             ]
-        if (
-            self.simulation_type == "M V S E2 I3 Q3 R D"
-        ):
+        if self.simulation_type == "M V S E2 I3 Q3 R D":
             return [
                 self.params["M"],
                 self.params["V"],
@@ -1033,8 +1029,7 @@ class Simulator:
                 self.params["R"],
                 self.params["D"],
             ]
-    
-    
+
     def _simulate_ivp(self, t, params, method) -> np.ndarray:
         """
         Solve ODE system with solve_ivp
