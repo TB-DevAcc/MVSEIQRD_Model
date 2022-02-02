@@ -1,6 +1,6 @@
 import numpy as np
 import scipy
-from scipy.integrate import DOP853, RK23, RK45, odeint, solve_ivp
+from scipy.integrate import odeint, solve_ivp
 from typing import Tuple
 
 
@@ -49,6 +49,19 @@ class Simulator:
             return 13
 
     def _build_dMdt(self, t) -> np.ndarray:
+        """
+        Set up equation for M (newborn)
+
+        Parameters
+        ----------
+        t : int
+            Current timestep
+
+        Returns
+        -------
+        np.ndarray
+            Calculated values of equation of M for current iteration
+        """
         res = []
         rho_mat = self.params["rho_mat"]
         M = self.params["M"]
@@ -57,6 +70,19 @@ class Simulator:
         return np.array(res).sum(axis=0)
 
     def _build_dVdt(self, t) -> np.ndarray:
+        """
+        Set up equation for V (vaccinated)
+
+        Parameters
+        ----------
+        t : int
+            Current timestep
+
+        Returns
+        -------
+        np.ndarray
+            Calculated values of equation of V for current iteration
+        """
         res = []
 
         rho_vac = self.params["rho_vac"]
@@ -70,6 +96,19 @@ class Simulator:
         return np.array(res).sum(axis=0)
 
     def _build_dSdt(self, t) -> np.ndarray:
+        """
+        Set up equation for S (susceptable)
+
+        Parameters
+        ----------
+        t : int
+            Current timestep
+
+        Returns
+        -------
+        np.ndarray
+            Calculated values of equation of S for current iteration
+        """
         res = []
         cls = self.simulation_type.split()
         if "M" in cls:
@@ -144,6 +183,19 @@ class Simulator:
             pass
 
     def _build_dE_ntdt(self, t) -> np.ndarray:
+        """
+        Set up equation for Ent (exposed and not tracked)
+
+        Parameters
+        ----------
+        t : int
+            Current timestep
+
+        Returns
+        -------
+        np.ndarray
+            Calculated values of equation of Ent for current iteration
+        """
         res = []
         cls = self.simulation_type.split()
         if "I3" in cls:
@@ -215,6 +267,19 @@ class Simulator:
         return np.array(res).sum(axis=0)
 
     def _build_dE_trdt(self, t) -> np.ndarray:
+        """
+        Set up equation for Etr (exposed and tracked)
+
+        Parameters
+        ----------
+        t : int
+            Current timestep
+
+        Returns
+        -------
+        np.ndarray
+            Calculated values of equation of Etr for current iteration
+        """
         res = []
         cls = self.simulation_type.split()
         if "I3" in cls:
@@ -287,6 +352,19 @@ class Simulator:
             pass
 
     def _build_dI_asymdt(self, t) -> np.ndarray:
+        """
+        Set up equation for Iasym (asymptomatic infectious)
+
+        Parameters
+        ----------
+        t : int
+            Current timestep
+
+        Returns
+        -------
+        np.ndarray
+            Calculated values of equation of Iasym for current iteration
+        """
         res = []
         cls = self.simulation_type.split()
         if "E2" in cls:
@@ -314,6 +392,19 @@ class Simulator:
         return np.array(res).sum(axis=0)
 
     def _build_dI_symdt(self, t) -> np.ndarray:
+        """
+        Set up equation for Isym (symptomatic infectious)
+
+        Parameters
+        ----------
+        t : int
+            Current timestep
+
+        Returns
+        -------
+        np.ndarray
+            Calculated values of equation of Isym for current iteration
+        """
         res = []
         cls = self.simulation_type.split()
         if "I3" in cls:
@@ -339,6 +430,19 @@ class Simulator:
         return np.array(res).sum(axis=0)
 
     def _build_dI_sevdt(self, t) -> np.ndarray:
+        """
+        Set up equation for Isev (severe infectious)
+
+        Parameters
+        ----------
+        t : int
+            Current timestep
+
+        Returns
+        -------
+        np.ndarray
+            Calculated values of equation of Isev for current iteration
+        """
         res = []
         # I3 doesn't have to be checked because I_sev is only called if I3 and Q3 are in simulation_type
         my_sev = self.params["my_sev"]
@@ -389,14 +493,12 @@ class Simulator:
         ----------
         t : int
             Current timestep
-        class_simulation_type : str
-            Simulation Type
-
+       
         Returns
         -------
         Tuple
             Equation for class Q based on simulation_type
-
+            
         """
         cls = self.simulation_type.split()
         if "Q3" in cls and "I3" in cls:
@@ -411,6 +513,19 @@ class Simulator:
             pass
 
     def _build_dQ_asymdt(self, t) -> np.ndarray:
+        """
+        Set up equation for Qasym (asymptomatic quarantined)
+
+        Parameters
+        ----------
+        t : int
+            Current timestep
+
+        Returns
+        -------
+        np.ndarray
+            Calculated values of equation of Qasym for current iteration
+        """
         res = []
         cls = self.simulation_type.split()
         if "E2" in cls:
@@ -443,33 +558,59 @@ class Simulator:
         return np.array(res).sum(axis=0)
 
     def _build_dQ_symdt(self, t) -> np.ndarray:
+        """
+        Set up equation for Qsym (symptomatic quarantined)
+
+        Parameters
+        ----------
+        t : int
+            Current timestep
+
+        Returns
+        -------
+        np.ndarray
+            Calculated values of equation of Qsym for current iteration
+        """
         res = []
-        cls = self.simulation_type.split()
-        if "I3" in cls:
-            tau_sym = self.params["tau_sym"]
-            I_sym = self.params["I_sym"]
-            res.append(tau_sym[int(t - 1)] * I_sym)
-        elif "I2" in cls:
-            pass
+          cls = self.simulation_type.split()
+          if "I3" in cls:
+              tau_sym = self.params["tau_sym"]
+              I_sym = self.params["I_sym"]
+              res.append(tau_sym[int(t - 1)] * I_sym)
+          elif "I2" in cls:
+              pass
 
-        if "Q3" in cls:
-            my_sym = self.params["my_sym"]
-            gamma_sym = self.params["gamma_sym"]
-            my_sev = self.params["my_sev"]
-            Q_asym = self.params["Q_asym"]
-            Q_sev = self.params["Q_sev"]
-            Q_sym = self.params["Q_sym"]
-            res.append(
-                my_sym[int(t - 1)] * Q_asym
-                + my_sym[int(t - 1)] * Q_sev
-                - (gamma_sym[int(t - 1)] * Q_sym + my_sev[int(t - 1)] * Q_sym)
-            )
-        elif "Q2" in cls:
-            pass
+          if "Q3" in cls:
+              my_sym = self.params["my_sym"]
+              gamma_sym = self.params["gamma_sym"]
+              my_sev = self.params["my_sev"]
+              Q_asym = self.params["Q_asym"]
+              Q_sev = self.params["Q_sev"]
+              Q_sym = self.params["Q_sym"]
+              res.append(
+                  my_sym[int(t - 1)] * Q_asym
+                  + my_sym[int(t - 1)] * Q_sev
+                  - (gamma_sym[int(t - 1)] * Q_sym + my_sev[int(t - 1)] * Q_sym)
+              )
+          elif "Q2" in cls:
+              pass
 
-        return np.array(res).sum(axis=0)
+          return np.array(res).sum(axis=0)
 
     def _build_dQ_sevdt(self, t) -> np.ndarray:
+        """
+        Set up equation for Qsev (severe quarantined)
+
+        Parameters
+        ----------
+        t : int
+            Current timestep
+
+        Returns
+        -------
+        np.ndarray
+            Calculated values of equation of Qsev for current iteration
+        """
         res = []
         # Q3 doesn't have to be checked because Q_sev is only called if I3 and Q3 are in simulation_type
         tau_sev = self.params["tau_sev"]
@@ -516,6 +657,19 @@ class Simulator:
         return np.array(res).sum(axis=0)
 
     def _build_dRdt(self, t) -> np.ndarray:
+        """
+        Set up equation for R (recovered)
+
+        Parameters
+        ----------
+        t : int
+            Current timestep
+
+        Returns
+        -------
+        np.ndarray
+            Calculated values of equation of R for current iteration
+        """
         res = []
         cls = self.simulation_type.split()
         if "I3" in cls:
@@ -586,6 +740,19 @@ class Simulator:
         return np.array(res).sum(axis=0)
 
     def _build_dDdt(self, t) -> np.ndarray:
+        """
+        Set up equation for D (dead)
+
+        Parameters
+        ----------
+        t : int
+            Current timestep
+
+        Returns
+        -------
+        np.ndarray
+            Calculated values of equation of D for current iteration
+        """
         res = []
         cls = self.simulation_type.split()
         if "I3" in cls:
@@ -634,15 +801,22 @@ class Simulator:
 
         return np.array(res).sum(axis=0)
 
-    def _build_ode_system(self, t, params: dict) -> list:
+    def _build_ode_system(self, t, params: dict) -> np.ndarray:
         """
         builds an ODE system for a given simulation type.
         E.g. simulation_type = "SI" -> [dSdt = ..., dIdt = ...]
 
+        Parameters
+        ----------
+        t : np.ndarray
+            timesteps of simulation - is not used actively but is necessary for the call of solve_ivp
+        params : dict
+            parameters for the simulation
+
         Returns
         -------
-        list
-            List of Ordinary differential equations that build a system
+        np.ndarray
+            1-Dim-Array of Ordinary differential equations that build a system
         """
         # Simulation doesn't do useful things if self.params won't change
         # -> so this reshape is necessary to set self.params to the calculated data from the previous iteration
@@ -725,55 +899,102 @@ class Simulator:
 
         Parameters
         ----------
-        ode_list : list
-            List of single ODEs to be integrated into the system
         params : dict
             Parameters for the simulation
 
         Returns
         -------
         dict
-            New parameters
+            result of simulation
         """
-        return self.simulate_RK45(params["t"], params)
+        return self._simulate_RK45(params["t"], params)
 
-    def _calc_sigma(self, t, d, k, I_sev_dk, Q_sev_dk):
+    def _calc_sigma(self, t, j, k, I_sev_jk, Q_sev_jk) -> np.float64:
         """
         Calculates value of sigma for specific situation dependent on available hospital beds
-        :param d: index of current district
-        :param k: index of current group
-        :param I_sev_dk: current value of I_sev for district d in group k
-        :param Q_sev_dk: current value of Q_sev for district d in group k
-        :return: value of sigma for current situation
+
+        Parameters
+        ----------
+        t : int
+            Current timestep
+        j : int
+            index of current district
+        k : int
+            index of current group
+        I_sev_jk : np.float64
+            current value of I_sev for district j in group k
+        Q_sev_jk : np.float64
+            current value of Q_sev for district j in group k
+
+        Returns
+        -------
+        np.float64
+            calculated value of sigma for current iteration
         """
         N_total = self.params["N_total"]
         N = self.params["N"]
         B = self.params["B"]
         sigma = self.params["sigma"]
-        if (I_sev_dk + Q_sev_dk) * N[d, k] <= (N[d, k] / N_total[d]) * B[d]:
-            return sigma[int(t - 1), d, k]
+        if (I_sev_jk + Q_sev_jk) * N[j, k] <= (N[j, k] / N_total[j]) * B[j]:
+            return sigma[int(t - 1), j, k]
         else:
             return (
-                sigma[int(t - 1), d, k] * (N[d, k] / N_total[d]) * B[d]
-                + (I_sev_dk + Q_sev_dk) * N[d, k]
-                - (N[d, k] / N_total[d]) * B[d]
-            ) / ((I_sev_dk + Q_sev_dk) * N[d, k])
+                   sigma[int(t - 1), j, k] * (N[j, k] / N_total[j]) * B[j]
+                   + (I_sev_jk + Q_sev_jk) * N[j, k]
+                   - (N[j, k] / N_total[j]) * B[j]
+           ) / ((I_sev_jk + Q_sev_jk) * N[j, k])
 
-    def simulate_RK45(self, t, params):
+    def _simulate_RK45(self, t, params) -> np.ndarray:
         """
-        Use solve_ivp with method 'RK45'
+        Use solve_ivp with method 'RK45' of scipy.integrate
+
+        Parameters
+        ----------
+        t : np.ndarray
+            timesteps of simulation
+        params : dict
+            parameters for the simulation
+
+        Returns
+        -------
+        np.ndarray
+            solution of ODE system solved with scipy.solve_ivp
         """
         return self._simulate_ivp(t, params, scipy.integrate.RK45)
 
-    def simulate_RK23(self, t, params):
+    def _simulate_RK23(self, t, params) -> np.ndarray:
         """
-        Use solve_ivp with method 'RK23'
+        Use solve_ivp with method 'RK23' of scipy.integrate
+
+        Parameters
+        ----------
+        t : np.ndarray
+            timesteps of simulation
+        params : dict
+            parameters for the simulation
+
+        Returns
+        -------
+        np.ndarray
+            solution of ODE system solved with scipy.solve_ivp
         """
         return self._simulate_ivp(t, params, scipy.integrate.RK23)
 
-    def simulate_DOP853(self, t, params):
+    def _simulate_DOP853(self, t, params) -> np.ndarray:
         """
-        Use solve_ivp with method 'DOP853'
+        Use solve_ivp with method 'DOP853' of scipy.integrate
+
+        Parameters
+        ----------
+        t : np.ndarray
+            timesteps of simulation
+        params : dict
+            parameters for the simulation
+
+        Returns
+        -------
+        np.ndarray
+            solution of ODE system solved with scipy.solve_ivp
         """
         return self._simulate_ivp(t, params, scipy.integrate.DOP853)
 
@@ -812,12 +1033,22 @@ class Simulator:
                 self.params["R"],
                 self.params["D"],
             ]
-
-    def _simulate_ivp(self, t, params, method):
+    
+    
+    def _simulate_ivp(self, t, params, method) -> np.ndarray:
         """
         Solve ODE system with solve_ivp
-        :param t: timesteps
-        :return: solution of ODE system solved with scipy.solve_ivp
+
+        Parameters
+        t : np.ndarray
+            timesteps of simulation
+        params : dict
+            parameters for the simulation
+
+        Returns
+        -------
+        np.ndarray
+            solution of ODE system solved with scipy.solve_ivp
         """
         sol = solve_ivp(
             fun=self._build_ode_system,
@@ -839,14 +1070,23 @@ class Simulator:
 
         return result
 
-    def simulate_odeint(self, ode_system, t):
+    def _simulate_odeint(self, params, t) -> np.ndarray:
         """
         Solve ODE system with odeint
-        :param t: timesteps
-        :return: solution of ODE system solved with scipy.odeint
+
+        Parameters
+        t : np.ndarray
+            timesteps of simulation
+        params : dict
+            parameters for the simulation
+
+        Returns
+        -------
+        np.ndarray
+            solution of ODE system solved with scipy.solve_ivp
         """
         sol = odeint(
-            func=ode_system,
+            func=self._build_ode_system,
             t=t,
             y0=np.array(self._prepare_y0()).ravel(),
             tfirst=True,
