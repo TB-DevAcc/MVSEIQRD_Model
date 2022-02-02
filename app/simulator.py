@@ -1,6 +1,7 @@
 import numpy as np
 import scipy
 from scipy.integrate import odeint, solve_ivp
+from typing import Tuple
 
 
 class Simulator:
@@ -20,7 +21,7 @@ class Simulator:
         params : dict
             Parameters for the simulation
         simulation_type : str
-            Type of simulation to be run e.g. "S I", "S E I R", "I3 S E2 I3 Q3 R I"
+            Type of simulation to be run e.g. "S I", "S E I R", "M V S E2 I3 Q3 R D"
 
         Returns
         -------
@@ -28,21 +29,33 @@ class Simulator:
             New parameters
         """
         self.params = params
-        self.simulation_type = simulation_type
+        if simulation_type == "full":
+            self.simulation_type = "M V S E2 I3 Q3 R D"
+        else:
+            self.simulation_type = simulation_type
         # TODO make sure attribute error doesn't crash this
         self.J = params["J"]
         self.K = params["K"]
+        self.param_count = self._count_params()
 
         return self._run_ode_system(params)
 
-    def _build_dMdt(self, class_simulation_type: str = "M") -> np.ndarray:
+    def _count_params(self):
+        if self.simulation_type == "S I":
+            return 2
+        if self.simulation_type == "S E I R":
+            return 4
+        if self.simulation_type == "M V S E2 I3 Q3 R D":
+            return 13
+
+    def _build_dMdt(self, t) -> np.ndarray:
         """
         Set up equation for M (newborn)
 
         Parameters
         ----------
-        class_simulation_type : str
-            Simulation Type
+        t : int
+            Current timestep
 
         Returns
         -------
@@ -50,23 +63,20 @@ class Simulator:
             Calculated values of equation of M for current iteration
         """
         res = []
-        for cls in class_simulation_type.split():
-            if cls == "M":
-                rho_mat = self.params["rho_mat"]
-                M = self.params["M"]
-                # TODO check numpy math and make sure it's not a shallow copy
-                res.append(-1 * rho_mat * M)
+        rho_mat = self.params["rho_mat"]
+        M = self.params["M"]
+        res.append(-1 * rho_mat[int(t - 1)] * M)
 
         return np.array(res).sum(axis=0)
 
-    def _build_dVdt(self, class_simulation_type: str = "V S") -> np.ndarray:
+    def _build_dVdt(self, t) -> np.ndarray:
         """
         Set up equation for V (vaccinated)
 
         Parameters
         ----------
-        class_simulation_type : str
-            Simulation Type
+        t : int
+            Current timestep
 
         Returns
         -------
@@ -74,28 +84,25 @@ class Simulator:
             Calculated values of equation of V for current iteration
         """
         res = []
-        for cls in class_simulation_type.split():
-            if cls == "V":
-                rho_vac = self.params["rho_vac"]
-                V = self.params["V"]
-                # TODO check numpy math and make sure it's not a shallow copy
-                res.append(-1 * rho_vac * V)
-            if cls == "S":
-                nu = self.params["nu"]
-                S = self.params["S"]
-                # TODO check numpy math and make sure it's not a shallow copy
-                res.append(nu * S)
+
+        rho_vac = self.params["rho_vac"]
+        V = self.params["V"]
+        res.append(-1 * rho_vac[int(t - 1)] * V)
+
+        nu = self.params["nu"]
+        S = self.params["S"]
+        res.append(nu[int(t - 1)] * S)
 
         return np.array(res).sum(axis=0)
 
-    def _build_dSdt(self, class_simulation_type: str = "M V R I3") -> np.ndarray:
+    def _build_dSdt(self, t) -> np.ndarray:
         """
         Set up equation for S (susceptable)
 
         Parameters
         ----------
-        class_simulation_type : str
-            Simulation Type
+        t : int
+            Current timestep
 
         Returns
         -------
@@ -103,67 +110,86 @@ class Simulator:
             Calculated values of equation of S for current iteration
         """
         res = []
-        for cls in class_simulation_type.split():
-            # Immune
-            if cls == "M":
-                rho_mat = self.params["rho_mat"]
-                M = self.params["M"]
-                # TODO check numpy math and make sure it's not a shallow copy
-                res.append(rho_mat * M)
-            if cls == "V":
-                rho_vac = self.params["rho_vac"]
-                nu = self.params["nu"]
-                S = self.params["S"]
-                V = self.params["V"]
-                # TODO check numpy math and make sure it's not a shallow copy
-                res.append(rho_vac * V - nu * S)
-            if cls == "R":
-                rho_rec = self.params["rho_rec"]
-                R = self.params["R"]
-                # TODO check numpy math and make sure it's not a shallow copy
-                res.append(rho_rec * R)
-            # Infectious
-            if cls == "I3":
-                S = self.params["S"]
-                N = self.params["N"]
-                beta_asym = self.params["beta_asym"]
-                beta_sym = self.params["beta_sym"]
-                beta_sev = self.params["beta_sev"]
-                I_asym = self.params["I_asym"]
-                I_sym = self.params["I_sym"]
-                I_sev = self.params["I_sev"]
-                # TODO check numpy math and make sure it's not a shallow copy
+        cls = self.simulation_type.split()
+        if "M" in cls:
+            rho_mat = self.params["rho_mat"]
+            M = self.params["M"]
+            res.append(rho_mat[int(t - 1)] * M)
+        if "V" in cls:
+            rho_vac = self.params["rho_vac"]
+            nu = self.params["nu"]
+            S = self.params["S"]
+            V = self.params["V"]
+            res.append(rho_vac[int(t - 1)] * V - nu[int(t - 1)] * S)
+        if "R" in cls:
+            rho_rec = self.params["rho_rec"]
+            R = self.params["R"]
+            res.append(rho_rec[int(t - 1)] * R)
+        if "I3" in cls:
+            S = self.params["S"]
+            N = self.params["N"]
+            beta_asym = self.params["beta_asym"]
+            beta_sym = self.params["beta_sym"]
+            beta_sev = self.params["beta_sev"]
+            I_asym = self.params["I_asym"]
+            I_sym = self.params["I_sym"]
+            I_sev = self.params["I_sev"]
 
-                res.append(
-                    [
-                        np.array(
-                            [
-                                -np.sum(
-                                    [
-                                        beta_asym[j, l, k] * I_asym[j, l]
-                                        + beta_sym[j, l, k] * I_sym[j, l]
-                                        + beta_sev[j, l, k] * I_sev[j, l]
-                                        for l in range(self.K)
-                                    ]
-                                )
-                                * S[j, k] / N[j, k]
-                                for k in range(self.K)
-                            ]
-                        )
-                        for j in range(self.J)
-                    ]
-                )
+            res.append(
+                [
+                    np.array(
+                        [
+                            -np.sum(
+                                [
+                                    beta_asym[int(t - 1), j, l, k] * I_asym[j, l]
+                                    + beta_sym[int(t - 1), j, l, k] * I_sym[j, l]
+                                    + beta_sev[int(t - 1), j, l, k] * I_sev[j, l]
+                                    for l in range(self.K)
+                                ]
+                            )
+                            * S[j, k]
+                            / N[j, k]
+                            for k in range(self.K)
+                        ]
+                    )
+                    for j in range(self.J)
+                ]
+            )
+        elif "I2" in cls:
+            pass
+        elif "I" in cls:
+            pass
 
         return np.array(res).sum(axis=0)
 
-    def _build_dE_ntdt(self, class_simulation_type: str = "E2 I3") -> np.ndarray:
+    def _build_dEdt(self, t) -> Tuple:
+        """
+        Wrap equations for E (exposed)
+        Parameters
+        ----------
+        t : int
+            Current timestep
+
+        Returns
+        -------
+        Tuple
+            Equation for class E based on simulation_type
+
+        """
+        cls = self.simulation_type.split()
+        if "E2" in cls:
+            return self._build_dE_trdt(t), self._build_dE_ntdt(t)
+        elif "E" in cls:
+            pass
+
+    def _build_dE_ntdt(self, t) -> np.ndarray:
         """
         Set up equation for Ent (exposed and not tracked)
 
         Parameters
         ----------
-        class_simulation_type : str
-            Simulation Type
+        t : int
+            Current timestep
 
         Returns
         -------
@@ -171,70 +197,83 @@ class Simulator:
             Calculated values of equation of Ent for current iteration
         """
         res = []
-        for cls in class_simulation_type.split():
-            if cls == "I3":
-                beta_asym = self.params["beta_asym"]
-                S = self.params["S"]
-                N = self.params["N"]
-                I_asym = self.params["I_asym"]
-                # TODO check numpy math and make sure it's not a shallow copy
-                res.append(
-                    [
-                        np.array(
-                            [
-                                np.sum([beta_asym[j, l, k] * I_asym[j, l] for l in range(self.K)])
-                                * S[j, k] / N[j, k]
-                                for k in range(self.K)
-                            ]
-                        )
-                        for j in range(self.J)
-                    ]
-                )
+        cls = self.simulation_type.split()
+        if "I3" in cls:
+            beta_asym = self.params["beta_asym"]
+            S = self.params["S"]
+            N = self.params["N"]
+            I_asym = self.params["I_asym"]
+            res.append(
+                [
+                    np.array(
+                        [
+                            np.sum(
+                                [
+                                    beta_asym[int(t - 1), j, l, k] * I_asym[j, l]
+                                    for l in range(self.K)
+                                ]
+                            )
+                            * S[j, k]
+                            / N[j, k]
+                            for k in range(self.K)
+                        ]
+                    )
+                    for j in range(self.J)
+                ]
+            )
 
-                beta_sym = self.params["beta_sym"]
-                beta_sev = self.params["beta_sev"]
-                psi = self.params["psi"]
-                I_sym = self.params["I_sym"]
-                I_sev = self.params["I_sev"]
-                # TODO check numpy math and make sure it's not a shallow copy
-                res.append(
-                    [
-                        np.array(
-                            [
-                                np.sum(
-                                    [
-                                        beta_sym[j, l, k]
-                                        * (1 - psi[j, l] * psi[j, k])
-                                        * I_sym[j, l]
-                                        + beta_sev[j, l, k]
-                                        * (1 - psi[j, l] * psi[j, k])
-                                        * I_sev[j, l]
-                                        for l in range(self.K)
-                                    ]
-                                )
-                                * S[j, k] / N[j, k]
-                                for k in range(self.K)
-                            ]
-                        )
-                        for j in range(self.J)
-                    ]
-                )
-            if cls == "E2":
-                epsilon = self.params["epsilon"]
-                Ent = self.params["E_nt"]
-                # TODO check numpy math and make sure it's not a shallow copy
-                res.append(-1 * epsilon * Ent)
+            beta_sym = self.params["beta_sym"]
+            beta_sev = self.params["beta_sev"]
+            psi = self.params["psi"]
+            I_sym = self.params["I_sym"]
+            I_sev = self.params["I_sev"]
+            res.append(
+                [
+                    np.array(
+                        [
+                            np.sum(
+                                [
+                                    beta_sym[int(t - 1), j, l, k]
+                                    * (
+                                        1
+                                        - psi[int(t - 1), j, l] * psi[int(t - 1), j, k]
+                                    )
+                                    * I_sym[j, l]
+                                    + beta_sev[int(t - 1), j, l, k]
+                                    * (
+                                        1
+                                        - psi[int(t - 1), j, l] * psi[int(t - 1), j, k]
+                                    )
+                                    * I_sev[j, l]
+                                    for l in range(self.K)
+                                ]
+                            )
+                            * S[j, k]
+                            / N[j, k]
+                            for k in range(self.K)
+                        ]
+                    )
+                    for j in range(self.J)
+                ]
+            )
+        elif "I" in cls:
+            pass
+
+        # method _build_dE_ntdt is only called if E2 is in simulation_type so this has to be executed anways
+        epsilon = self.params["epsilon"]
+        Ent = self.params["E_nt"]
+        res.append(-1 * epsilon[int(t - 1)] * Ent)
 
         return np.array(res).sum(axis=0)
 
-    def _build_dE_trdt(self, class_simulation_type: str = "E2 I3") -> np.ndarray:
+    def _build_dE_trdt(self, t) -> np.ndarray:
         """
         Set up equation for Etr (exposed and tracked)
 
         Parameters
         ----------
-        class_simulation_type : str
-            Simulation Type
+        t : int
+            Current timestep
 
         Returns
         -------
@@ -242,50 +281,84 @@ class Simulator:
             Calculated values of equation of Etr for current iteration
         """
         res = []
-        for cls in class_simulation_type.split():
-            if cls == "I3":
-                beta_sym = self.params["beta_sym"]
-                beta_sev = self.params["beta_sev"]
-                psi = self.params["psi"]
-                I_sym = self.params["I_sym"]
-                I_sev = self.params["I_sev"]
-                S = self.params["S"]
-                N = self.params["N"]
-                # TODO check numpy math and make sure it's not a shallow copy
-                res.append(
-                    [
-                        np.array(
-                            [
-                                np.sum(
-                                    [
-                                        beta_sym[j, l, k] * psi[j, l] * psi[j, k] * I_sym[j, l]
-                                        + beta_sev[j, l, k] * psi[j, l] * psi[j, k] * I_sev[j, l]
-                                        for l in range(self.K)
-                                    ]
-                                )
-                                * S[j, k] / N[j, k]
-                                for k in range(self.K)
-                            ]
-                        )
-                        for j in range(self.J)
-                    ]
-                )
-            if cls == "E2":
-                epsilon = self.params["epsilon"]
-                Etr = self.params["E_tr"]
-                # TODO check numpy math and make sure it's not a shallow copy
-                res.append(-1 * epsilon * Etr)
+        cls = self.simulation_type.split()
+        if "I3" in cls:
+            beta_sym = self.params["beta_sym"]
+            beta_sev = self.params["beta_sev"]
+            psi = self.params["psi"]
+            I_sym = self.params["I_sym"]
+            I_sev = self.params["I_sev"]
+            S = self.params["S"]
+            N = self.params["N"]
+            res.append(
+                [
+                    np.array(
+                        [
+                            np.sum(
+                                [
+                                    beta_sym[int(t - 1), j, l, k]
+                                    * psi[int(t - 1), j, l]
+                                    * psi[int(t - 1), j, k]
+                                    * I_sym[j, l]
+                                    + beta_sev[int(t - 1), j, l, k]
+                                    * psi[int(t - 1), j, l]
+                                    * psi[int(t - 1), j, k]
+                                    * I_sev[j, l]
+                                    for l in range(self.K)
+                                ]
+                            )
+                            * S[j, k]
+                            / N[j, k]
+                            for k in range(self.K)
+                        ]
+                    )
+                    for j in range(self.J)
+                ]
+            )
+        elif "I2" in cls:
+            pass
+
+        # method _build_dE_trdt is only called if E2 is in simulation_type so this has to be executed anways
+        epsilon = self.params["epsilon"]
+        Etr = self.params["E_tr"]
+        res.append(-1 * epsilon[int(t - 1)] * Etr)
 
         return np.array(res).sum(axis=0)
 
-    def _build_dI_asymdt(self, class_simulation_type: str = "E2 I3") -> np.ndarray:
+    def _build_dIdt(self, t) -> Tuple:
+        """
+        Wrap equation for I (infectious)
+        Parameters
+        ----------
+        t : int
+            Current timestep
+
+        Returns
+        -------
+        Tuple
+            Equation for class I based on simulation_type
+
+        """
+        cls = self.simulation_type.split()
+        if "I3" in cls and "Q3" in cls:
+            return (
+                self._build_dI_asymdt(t),
+                self._build_dI_symdt(t),
+                self._build_dI_sevdt(t),
+            )
+        elif "I2" in cls:
+            return self._build_dI_asymdt(t), self._build_dI_symdt(t)
+        elif "I" in cls:
+            pass
+
+    def _build_dI_asymdt(self, t) -> np.ndarray:
         """
         Set up equation for Iasym (asymptomatic infectious)
 
         Parameters
         ----------
-        class_simulation_type : str
-            Simulation Type
+        t : int
+            Current timestep
 
         Returns
         -------
@@ -293,34 +366,39 @@ class Simulator:
             Calculated values of equation of Iasym for current iteration
         """
         res = []
-        for cls in class_simulation_type.split():
-            if cls == "E2":
-                epsilon = self.params["epsilon"]
-                Ent = self.params["E_nt"]
-                # TODO check numpy math and make sure it's not a shallow copy
-                res.append(epsilon * Ent)
-            if cls == "I3":
-                gamma_asym = self.params["gamma_asym"]
-                my_sym = self.params["my_sym"]
-                my_sev = self.params["my_sev"]
-                tau_asym = self.params["tau_asym"]
-                I_asym = self.params["I_asym"]
-                # TODO check numpy math and make sure it's not a shallow copy
-                res.append(
-                    -1
-                    * (gamma_asym * I_asym + my_sym * I_asym + my_sev * I_asym + tau_asym * I_asym)
+        cls = self.simulation_type.split()
+        if "E2" in cls:
+            epsilon = self.params["epsilon"]
+            Ent = self.params["E_nt"]
+            res.append(epsilon[int(t - 1)] * Ent)
+        if "I3" in cls:
+            gamma_asym = self.params["gamma_asym"]
+            my_sym = self.params["my_sym"]
+            my_sev = self.params["my_sev"]
+            tau_asym = self.params["tau_asym"]
+            I_asym = self.params["I_asym"]
+            res.append(
+                -1
+                * (
+                    gamma_asym[int(t - 1)] * I_asym
+                    + my_sym[int(t - 1)] * I_asym
+                    + my_sev[int(t - 1)] * I_asym
+                    + tau_asym[int(t - 1)] * I_asym
                 )
+            )
+        elif "I2" in cls:
+            pass
 
         return np.array(res).sum(axis=0)
 
-    def _build_dI_symdt(self, class_simulation_type: str = "I3") -> np.ndarray:
+    def _build_dI_symdt(self, t) -> np.ndarray:
         """
         Set up equation for Isym (symptomatic infectious)
 
         Parameters
         ----------
-        class_simulation_type : str
-            Simulation Type
+        t : int
+            Current timestep
 
         Returns
         -------
@@ -328,32 +406,37 @@ class Simulator:
             Calculated values of equation of Isym for current iteration
         """
         res = []
-        for cls in class_simulation_type.split():
-            if cls == "I3":
-                my_sym = self.params["my_sym"]
-                my_sev = self.params["my_sev"]
-                gamma_sym = self.params["gamma_sym"]
-                tau_sym = self.params["tau_sym"]
-                I_asym = self.params["I_asym"]
-                I_sym = self.params["I_sym"]
-                I_sev = self.params["I_sev"]
-                # TODO check numpy math and make sure it's not a shallow copy
-                res.append(
-                    my_sym * I_asym
-                    + my_sym * I_sev
-                    - (gamma_sym * I_sym + my_sev * I_sym + tau_sym * I_sym)
+        cls = self.simulation_type.split()
+        if "I3" in cls:
+            my_sym = self.params["my_sym"]
+            my_sev = self.params["my_sev"]
+            gamma_sym = self.params["gamma_sym"]
+            tau_sym = self.params["tau_sym"]
+            I_asym = self.params["I_asym"]
+            I_sym = self.params["I_sym"]
+            I_sev = self.params["I_sev"]
+            res.append(
+                my_sym[int(t - 1)] * I_asym
+                + my_sym[int(t - 1)] * I_sev
+                - (
+                    gamma_sym[int(t - 1)] * I_sym
+                    + my_sev[int(t - 1)] * I_sym
+                    + tau_sym[int(t - 1)] * I_sym
                 )
+            )
+        elif "I2" in cls:
+            pass
 
         return np.array(res).sum(axis=0)
 
-    def _build_dI_sevdt(self, class_simulation_type: str = "I3") -> np.ndarray:
+    def _build_dI_sevdt(self, t) -> np.ndarray:
         """
         Set up equation for Isev (severe infectious)
 
         Parameters
         ----------
-        class_simulation_type : str
-            Simulation Type
+        t : int
+            Current timestep
 
         Returns
         -------
@@ -361,53 +444,82 @@ class Simulator:
             Calculated values of equation of Isev for current iteration
         """
         res = []
-        for cls in class_simulation_type.split():
-            if cls == "I3":
-                my_sev = self.params["my_sev"]
-                gamma_sev_r = self.params["gamma_sev_r"]
-                gamma_sev_d = self.params["gamma_sev_d"]
-                my_sym = self.params["my_sym"]
-                tau_sev = self.params["tau_sev"]
-                I_asym = self.params["I_asym"]
-                I_sym = self.params["I_sym"]
-                I_sev = self.params["I_sev"]
-                Q_sev = self.params["Q_sev"]
-                # TODO check numpy math and make sure it's not a shallow copy
-                res.append(
-                    my_sev * I_asym
-                    + my_sev * I_sym
-                    - 1
-                    * (
+        # I3 doesn't have to be checked because I_sev is only called if I3 and Q3 are in simulation_type
+        my_sev = self.params["my_sev"]
+        gamma_sev_r = self.params["gamma_sev_r"]
+        gamma_sev_d = self.params["gamma_sev_d"]
+        my_sym = self.params["my_sym"]
+        tau_sev = self.params["tau_sev"]
+        I_asym = self.params["I_asym"]
+        I_sym = self.params["I_sym"]
+        I_sev = self.params["I_sev"]
+        Q_sev = self.params["Q_sev"]
+        res.append(
+            my_sev[int(t - 1)] * I_asym
+            + my_sev[int(t - 1)] * I_sym
+            - 1
+            * (
+                [
+                    np.array(
                         [
-                            np.array(
-                                [
-                                    (
-                                        (1 - self._calc_sigma(j, k, I_sev[j, k], Q_sev[j, k]))
-                                        * gamma_sev_r[j, k]
-                                        + self._calc_sigma(j, k, I_sev[j, k], Q_sev[j, k])
-                                        * gamma_sev_d[j, k]
+                            (
+                                (
+                                    1
+                                    - self._calc_sigma(
+                                        t, j, k, I_sev[j, k], Q_sev[j, k]
                                     )
-                                    * I_sev[j, k]
-                                    for k in range(self.K)
-                                ]
+                                )
+                                * gamma_sev_r[int(t - 1), j, k]
+                                + self._calc_sigma(t, j, k, I_sev[j, k], Q_sev[j, k])
+                                * gamma_sev_d[int(t - 1), j, k]
                             )
-                            for j in range(self.J)
+                            * I_sev[j, k]
+                            for k in range(self.K)
                         ]
-                        + my_sym * I_sev
-                        + tau_sev * I_sev
                     )
-                )
+                    for j in range(self.J)
+                ]
+                + my_sym[int(t - 1)] * I_sev
+                + tau_sev[int(t - 1)] * I_sev
+            )
+        )
 
         return np.array(res).sum(axis=0)
 
-    def _build_dQ_asymdt(self, class_simulation_type: str = "E2 I3 Q3") -> np.ndarray:
+    def _build_dQdt(self, t) -> Tuple:
+        """
+        Wrap equation for class Q (quarantined)
+        Parameters
+        ----------
+        t : int
+            Current timestep
+       
+        Returns
+        -------
+        Tuple
+            Equation for class Q based on simulation_type
+            
+        """
+        cls = self.simulation_type.split()
+        if "Q3" in cls and "I3" in cls:
+            return (
+                self._build_dQ_asymdt(t),
+                self._build_dQ_symdt(t),
+                self._build_dQ_sevdt(t),
+            )
+        elif "Q2" in cls:
+            return self._build_dQ_asymdt(t), self._build_dQ_symdt(t)
+        elif "Q" in cls:
+            pass
+
+    def _build_dQ_asymdt(self, t) -> np.ndarray:
         """
         Set up equation for Qasym (asymptomatic quarantined)
 
         Parameters
         ----------
-        class_simulation_type : str
-            Simulation Type
+        t : int
+            Current timestep
 
         Returns
         -------
@@ -415,35 +527,44 @@ class Simulator:
             Calculated values of equation of Qasym for current iteration
         """
         res = []
-        for cls in class_simulation_type.split():
-            if cls == "E2":
-                epsilon = self.params["epsilon"]
-                Etr = self.params["E_tr"]
-                # TODO check numpy math and make sure it's not a shallow copy
-                res.append(epsilon * Etr)
-            if cls == "I3":
-                tau_asym = self.params["tau_asym"]
-                I_asym = self.params["I_asym"]
-                # TODO check numpy math and make sure it's not a shallow copy
-                res.append(tau_asym * I_asym)
-            if cls == "Q3":
-                gamma_asym = self.params["gamma_asym"]
-                my_sym = self.params["my_sym"]
-                my_sev = self.params["my_sev"]
-                Q_asym = self.params["Q_asym"]
-                # TODO check numpy math and make sure it's not a shallow copy
-                res.append(-1 * (gamma_asym * Q_asym + my_sym * Q_asym + my_sev * Q_asym))
+        cls = self.simulation_type.split()
+        if "E2" in cls:
+            epsilon = self.params["epsilon"]
+            Etr = self.params["E_tr"]
+            res.append(epsilon[int(t - 1)] * Etr)
+        if "I3" in cls:
+            tau_asym = self.params["tau_asym"]
+            I_asym = self.params["I_asym"]
+            res.append(tau_asym[int(t - 1)] * I_asym)
+        elif "I2" in cls:
+            pass
+
+        if "Q3" in cls:
+            gamma_asym = self.params["gamma_asym"]
+            my_sym = self.params["my_sym"]
+            my_sev = self.params["my_sev"]
+            Q_asym = self.params["Q_asym"]
+            res.append(
+                -1
+                * (
+                    gamma_asym[int(t - 1)] * Q_asym
+                    + my_sym[int(t - 1)] * Q_asym
+                    + my_sev[int(t - 1)] * Q_asym
+                )
+            )
+        elif "Q2" in cls:
+            pass
 
         return np.array(res).sum(axis=0)
 
-    def _build_dQ_symdt(self, class_simulation_type: str = "I3 Q3") -> np.ndarray:
+    def _build_dQ_symdt(self, t) -> np.ndarray:
         """
         Set up equation for Qsym (symptomatic quarantined)
 
         Parameters
         ----------
-        class_simulation_type : str
-            Simulation Type
+        t : int
+            Current timestep
 
         Returns
         -------
@@ -451,32 +572,39 @@ class Simulator:
             Calculated values of equation of Qsym for current iteration
         """
         res = []
-        for cls in class_simulation_type.split():
-            if cls == "I3":
-                tau_sym = self.params["tau_sym"]
-                I_sym = self.params["I_sym"]
-                # TODO check numpy math and make sure it's not a shallow copy
-                res.append(tau_sym * I_sym)
-            if cls == "Q3":
-                my_sym = self.params["my_sym"]
-                gamma_sym = self.params["gamma_sym"]
-                my_sev = self.params["my_sev"]
-                Q_asym = self.params["Q_asym"]
-                Q_sev = self.params["Q_sev"]
-                Q_sym = self.params["Q_sym"]
-                # TODO check numpy math and make sure it's not a shallow copy
-                res.append(my_sym * Q_asym + my_sym * Q_sev - (gamma_sym * Q_sym + my_sev * Q_sym))
+          cls = self.simulation_type.split()
+          if "I3" in cls:
+              tau_sym = self.params["tau_sym"]
+              I_sym = self.params["I_sym"]
+              res.append(tau_sym[int(t - 1)] * I_sym)
+          elif "I2" in cls:
+              pass
 
-        return np.array(res).sum(axis=0)
+          if "Q3" in cls:
+              my_sym = self.params["my_sym"]
+              gamma_sym = self.params["gamma_sym"]
+              my_sev = self.params["my_sev"]
+              Q_asym = self.params["Q_asym"]
+              Q_sev = self.params["Q_sev"]
+              Q_sym = self.params["Q_sym"]
+              res.append(
+                  my_sym[int(t - 1)] * Q_asym
+                  + my_sym[int(t - 1)] * Q_sev
+                  - (gamma_sym[int(t - 1)] * Q_sym + my_sev[int(t - 1)] * Q_sym)
+              )
+          elif "Q2" in cls:
+              pass
 
-    def _build_dQ_sevdt(self, class_simulation_type: str = "I3 Q3") -> np.ndarray:
+          return np.array(res).sum(axis=0)
+
+    def _build_dQ_sevdt(self, t) -> np.ndarray:
         """
         Set up equation for Qsev (severe quarantined)
 
         Parameters
         ----------
-        class_simulation_type : str
-            Simulation Type
+        t : int
+            Current timestep
 
         Returns
         -------
@@ -484,56 +612,58 @@ class Simulator:
             Calculated values of equation of Qsev for current iteration
         """
         res = []
-        for cls in class_simulation_type.split():
-            if cls == "I3":
-                tau_sev = self.params["tau_sev"]
-                I_sev = self.params["I_sev"]
-                # TODO check numpy math and make sure it's not a shallow copy
-                res.append(tau_sev * I_sev)
-            if cls == "Q3":
-                my_sev = self.params["my_sev"]
-                my_sym = self.params["my_sym"]
-                gamma_sev_r = self.params["gamma_sev_r"]
-                gamma_sev_d = self.params["gamma_sev_d"]
-                Q_asym = self.params["Q_asym"]
-                Q_sym = self.params["Q_sym"]
-                Q_sev = self.params["Q_sev"]
-                I_sev = self.params["I_sev"]
-                # TODO check numpy math and make sure it's not a shallow copy
-                res.append(
-                    my_sev * Q_asym
-                    + my_sev * Q_sym
-                    - 1
-                    * (
+        # Q3 doesn't have to be checked because Q_sev is only called if I3 and Q3 are in simulation_type
+        tau_sev = self.params["tau_sev"]
+        I_sev = self.params["I_sev"]
+        res.append(tau_sev[int(t - 1)] * I_sev)
+
+        my_sev = self.params["my_sev"]
+        my_sym = self.params["my_sym"]
+        gamma_sev_r = self.params["gamma_sev_r"]
+        gamma_sev_d = self.params["gamma_sev_d"]
+        Q_asym = self.params["Q_asym"]
+        Q_sym = self.params["Q_sym"]
+        Q_sev = self.params["Q_sev"]
+        I_sev = self.params["I_sev"]
+        res.append(
+            my_sev[int(t - 1)] * Q_asym
+            + my_sev[int(t - 1)] * Q_sym
+            - 1
+            * (
+                [
+                    np.array(
                         [
-                            np.array(
-                                [
-                                    (
-                                        (1 - self._calc_sigma(j, k, I_sev[j, k], Q_sev[j, k]))
-                                        * gamma_sev_r[j, k]
-                                        + self._calc_sigma(j, k, I_sev[j, k], Q_sev[j, k])
-                                        * gamma_sev_d[j, k]
+                            (
+                                (
+                                    1
+                                    - self._calc_sigma(
+                                        t, j, k, I_sev[j, k], Q_sev[j, k]
                                     )
-                                    * Q_sev[j, k]
-                                    for k in range(self.K)
-                                ]
+                                )
+                                * gamma_sev_r[int(t - 1), j, k]
+                                + self._calc_sigma(t, j, k, I_sev[j, k], Q_sev[j, k])
+                                * gamma_sev_d[int(t - 1), j, k]
                             )
-                            for j in range(self.J)
+                            * Q_sev[j, k]
+                            for k in range(self.K)
                         ]
-                        + my_sym * Q_sev
                     )
-                )
+                    for j in range(self.J)
+                ]
+                + my_sym[int(t - 1)] * Q_sev
+            )
+        )
 
         return np.array(res).sum(axis=0)
 
-    def _build_dRdt(self, class_simulation_type: str = "I3 Q3 R") -> np.ndarray:
+    def _build_dRdt(self, t) -> np.ndarray:
         """
         Set up equation for R (recovered)
 
         Parameters
         ----------
-        class_simulation_type : str
-            Simulation Type
+        t : int
+            Current timestep
 
         Returns
         -------
@@ -541,75 +671,82 @@ class Simulator:
             Calculated values of equation of R for current iteration
         """
         res = []
-        for cls in class_simulation_type.split():
-            if cls == "I3":
-                gamma_asym = self.params["gamma_asym"]
-                gamma_sym = self.params["gamma_sym"]
-                gamma_sev_r = self.params["gamma_sev_r"]
-                I_asym = self.params["I_asym"]
-                I_sym = self.params["I_sym"]
-                I_sev = self.params["I_sev"]
-                Q_sev = self.params["Q_sev"]
-                # TODO check numpy math and make sure it's not a shallow copy
-                res.append(
-                    gamma_asym * I_asym
-                    + gamma_sym * I_sym
-                    + (
-                        [
-                            np.array(
-                                [
-                                    1 - self._calc_sigma(j, k, I_sev[j, k], Q_sev[j, k])
-                                    for k in range(self.K)
-                                ]
-                            )
-                            for j in range(self.J)
-                        ]
-                    )
-                    * gamma_sev_r
-                    * I_sev
+        cls = self.simulation_type.split()
+        if "I3" in cls:
+            gamma_asym = self.params["gamma_asym"]
+            gamma_sym = self.params["gamma_sym"]
+            gamma_sev_r = self.params["gamma_sev_r"]
+            I_asym = self.params["I_asym"]
+            I_sym = self.params["I_sym"]
+            I_sev = self.params["I_sev"]
+            Q_sev = self.params["Q_sev"]
+            res.append(
+                gamma_asym[int(t - 1)] * I_asym
+                + gamma_sym[int(t - 1)] * I_sym
+                + (
+                    [
+                        np.array(
+                            [
+                                1 - self._calc_sigma(t, j, k, I_sev[j, k], Q_sev[j, k])
+                                for k in range(self.K)
+                            ]
+                        )
+                        for j in range(self.J)
+                    ]
                 )
-            if cls == "Q3":
-                gamma_asym = self.params["gamma_asym"]
-                gamma_sym = self.params["gamma_sym"]
-                gamma_sev_r = self.params["gamma_sev_r"]
-                Q_asym = self.params["Q_asym"]
-                Q_sym = self.params["Q_sym"]
-                Q_sev = self.params["Q_sev"]
-                I_sev = self.params["I_sev"]
-                # TODO check numpy math and make sure it's not a shallow copy
-                res.append(
-                    gamma_asym * Q_asym
-                    + gamma_sym * Q_sym
-                    + (
-                        [
-                            np.array(
-                                [
-                                    1 - self._calc_sigma(j, k, I_sev[j, k], Q_sev[j, k])
-                                    for k in range(self.K)
-                                ]
-                            )
-                            for j in range(self.J)
-                        ]
-                    )
-                    * gamma_sev_r
-                    * Q_sev
+                * gamma_sev_r[int(t - 1)]
+                * I_sev
+            )
+        elif "I2" in cls:
+            pass
+        elif "I" in cls:
+            pass
+
+        if "Q3" in cls:
+            gamma_asym = self.params["gamma_asym"]
+            gamma_sym = self.params["gamma_sym"]
+            gamma_sev_r = self.params["gamma_sev_r"]
+            Q_asym = self.params["Q_asym"]
+            Q_sym = self.params["Q_sym"]
+            Q_sev = self.params["Q_sev"]
+            I_sev = self.params["I_sev"]
+            res.append(
+                gamma_asym[int(t - 1)] * Q_asym
+                + gamma_sym[int(t - 1)] * Q_sym
+                + (
+                    [
+                        np.array(
+                            [
+                                1 - self._calc_sigma(t, j, k, I_sev[j, k], Q_sev[j, k])
+                                for k in range(self.K)
+                            ]
+                        )
+                        for j in range(self.J)
+                    ]
                 )
-            if cls == "R":
-                rho_rec = self.params["rho_rec"]
-                R = self.params["R"]
-                # TODO check numpy math and make sure it's not a shallow copy
-                res.append(-1 * rho_rec * R)
+                * gamma_sev_r[int(t - 1)]
+                * Q_sev
+            )
+        elif "Q2" in cls:
+            pass
+        elif "Q" in cls:
+            pass
+
+        # method _build_dR_dt is only called if R is in simulation_type so this has to be executed anways
+        rho_rec = self.params["rho_rec"]
+        R = self.params["R"]
+        res.append(-1 * rho_rec[int(t - 1)] * R)
 
         return np.array(res).sum(axis=0)
 
-    def _build_dDdt(self, class_simulation_type: str = "I3 Q3") -> np.ndarray:
+    def _build_dDdt(self, t) -> np.ndarray:
         """
         Set up equation for D (dead)
 
         Parameters
         ----------
-        class_simulation_type : str
-            Simulation Type
+        t : int
+            Current timestep
 
         Returns
         -------
@@ -617,43 +754,50 @@ class Simulator:
             Calculated values of equation of D for current iteration
         """
         res = []
-        for cls in class_simulation_type.split():
-            if cls == "I3":
-                gamma_sev_d = self.params["gamma_sev_d"]
-                I_sev = self.params["I_sev"]
-                Q_sev = self.params["Q_sev"]
-                # TODO check numpy math and make sure it's not a shallow copy
-                res.append(
-                    [
-                        np.array(
-                            [
-                                self._calc_sigma(j, k, I_sev[j, k], Q_sev[j, k])
-                                * gamma_sev_d[j, k]
-                                * I_sev[j, k]
-                                for k in range(self.K)
-                            ]
-                        )
-                        for j in range(self.J)
-                    ]
-                )
-            if cls == "Q3":
-                gamma_sev_d = self.params["gamma_sev_d"]
-                I_sev = self.params["I_sev"]
-                Q_sev = self.params["Q_sev"]
-                # TODO check numpy math and make sure it's not a shallow copy
-                res.append(
-                    [
-                        np.array(
-                            [
-                                self._calc_sigma(j, k, I_sev[j, k], Q_sev[j, k])
-                                * gamma_sev_d[j, k]
-                                * Q_sev[j, k]
-                                for k in range(self.K)
-                            ]
-                        )
-                        for j in range(self.J)
-                    ]
-                )
+        cls = self.simulation_type.split()
+        if "I3" in cls:
+            gamma_sev_d = self.params["gamma_sev_d"]
+            I_sev = self.params["I_sev"]
+            Q_sev = self.params["Q_sev"]
+            res.append(
+                [
+                    np.array(
+                        [
+                            self._calc_sigma(t, j, k, I_sev[j, k], Q_sev[j, k])
+                            * gamma_sev_d[int(t - 1), j, k]
+                            * I_sev[j, k]
+                            for k in range(self.K)
+                        ]
+                    )
+                    for j in range(self.J)
+                ]
+            )
+        elif "I2" in cls:
+            pass
+        elif "I" in cls:
+            pass
+
+        if "Q3" in cls:
+            gamma_sev_d = self.params["gamma_sev_d"]
+            I_sev = self.params["I_sev"]
+            Q_sev = self.params["Q_sev"]
+            res.append(
+                [
+                    np.array(
+                        [
+                            self._calc_sigma(t, j, k, I_sev[j, k], Q_sev[j, k])
+                            * gamma_sev_d[int(t - 1), j, k]
+                            * Q_sev[j, k]
+                            for k in range(self.K)
+                        ]
+                    )
+                    for j in range(self.J)
+                ]
+            )
+        elif "Q2" in cls:
+            pass
+        elif "Q" in cls:
+            pass
 
         return np.array(res).sum(axis=0)
 
@@ -677,29 +821,77 @@ class Simulator:
         # Simulation doesn't do useful things if self.params won't change
         # -> so this reshape is necessary to set self.params to the calculated data from the previous iteration
         # so the current iteration can use these calculated data to use them in the next calculation
-        self.params["M"], self.params["V"], self.params["S"], \
-        self.params["E_tr"], self.params["E_nt"], \
-        self.params["I_asym"], self.params["I_sym"], self.params["I_sev"], \
-        self.params["Q_asym"], self.params["Q_sym"], self.params["Q_sev"], \
-        self.params["R"], self.params["D"] = params.reshape((13, self.J, self.K))
+        if self.simulation_type == "S I":
+            pass
+        elif self.simulation_type == "S E I R":
+            pass
+        if (
+            self.simulation_type == "M V S E2 I3 Q3 R D"
+        ):
+            (
+                self.params["M"],
+                self.params["V"],
+                self.params["S"],
+                self.params["E_tr"],
+                self.params["E_nt"],
+                self.params["I_asym"],
+                self.params["I_sym"],
+                self.params["I_sev"],
+                self.params["Q_asym"],
+                self.params["Q_sym"],
+                self.params["Q_sev"],
+                self.params["R"],
+                self.params["D"],
+            ) = params.reshape((self.param_count, self.J, self.K))
 
-        if self.simulation_type == "I3 S E2 I3 Q3 R I" or self.simulation_type == "full":
-            return np.array([
-                self._build_dMdt(),
-                self._build_dVdt(),
-                self._build_dSdt(),
-                self._build_dE_trdt(),
-                self._build_dE_ntdt(),
-                self._build_dI_asymdt(),
-                self._build_dI_symdt(),
-                self._build_dI_sevdt(),
-                self._build_dQ_asymdt(),
-                self._build_dQ_symdt(),
-                self._build_dQ_sevdt(),
-                self._build_dRdt(),
-                self._build_dDdt(),
-            ]).ravel()
-        # TODO implement different simulation types
+        result = []
+        if "M" in self.simulation_type:
+            result.append(self._build_dMdt(t))
+        else:
+            result.append(np.zeros((self.J, self.K)))
+
+        if "V" in self.simulation_type:
+            result.append(self._build_dVdt(t))
+        else:
+            result.append(np.zeros((self.J, self.K)))
+
+        if "S" in self.simulation_type:
+            result.append(self._build_dSdt(t))
+        else:
+            result.append(np.zeros((self.J, self.K)))
+
+        if "E" in self.simulation_type:
+            e = self._build_dEdt(t)
+            for sub_types in e:
+                result.append(sub_types)
+        else:
+            result.append(np.zeros((self.J, self.K)))
+
+        if "I" in self.simulation_type:
+            i = self._build_dIdt(t)
+            for sub_types in i:
+                result.append(sub_types)
+        else:
+            result.append(np.zeros((self.J, self.K)))
+
+        if "Q" in self.simulation_type:
+            q = self._build_dQdt(t)
+            for sub_types in q:
+                result.append(sub_types)
+        else:
+            result.append(np.zeros((self.J, self.K)))
+
+        if "R" in self.simulation_type:
+            result.append(self._build_dRdt(t))
+        else:
+            result.append(np.zeros((self.J, self.K)))
+
+        if "D" in self.simulation_type:
+            result.append(self._build_dDdt(t))
+        else:
+            result.append(np.zeros((self.J, self.K)))
+
+        return np.array(result).ravel()
 
     def _run_ode_system(self, params) -> dict:
         """
@@ -717,12 +909,14 @@ class Simulator:
         """
         return self._simulate_RK45(params["t"], params)
 
-    def _calc_sigma(self, j, k, I_sev_jk, Q_sev_jk) -> np.float64:
+    def _calc_sigma(self, t, j, k, I_sev_jk, Q_sev_jk) -> np.float64:
         """
         Calculates value of sigma for specific situation dependent on available hospital beds
 
         Parameters
         ----------
+        t : int
+            Current timestep
         j : int
             index of current district
         k : int
@@ -742,10 +936,10 @@ class Simulator:
         B = self.params["B"]
         sigma = self.params["sigma"]
         if (I_sev_jk + Q_sev_jk) * N[j, k] <= (N[j, k] / N_total[j]) * B[j]:
-            return sigma[j, k]
+            return sigma[int(t - 1), j, k]
         else:
             return (
-                   sigma[j, k] * (N[j, k] / N_total[j]) * B[j]
+                   sigma[int(t - 1), j, k] * (N[j, k] / N_total[j]) * B[j]
                    + (I_sev_jk + Q_sev_jk) * N[j, k]
                    - (N[j, k] / N_total[j]) * B[j]
            ) / ((I_sev_jk + Q_sev_jk) * N[j, k])
@@ -804,6 +998,43 @@ class Simulator:
         """
         return self._simulate_ivp(t, params, scipy.integrate.DOP853)
 
+    def _prepare_y0(self) -> list:
+        """
+        Prepare start values for the current iteration
+        Returns
+        -------
+        list
+            Start values for current iteration
+        """
+        if self.simulation_type == "S I":
+            return [self.params["S"], self.params["I"]]
+        if self.simulation_type == "S E I R":
+            return [
+                self.params["S"],
+                self.params["E"],
+                self.params["I"],
+                self.params["R"],
+            ]
+        if (
+            self.simulation_type == "M V S E2 I3 Q3 R D"
+        ):
+            return [
+                self.params["M"],
+                self.params["V"],
+                self.params["S"],
+                self.params["E_tr"],
+                self.params["E_nt"],
+                self.params["I_asym"],
+                self.params["I_sym"],
+                self.params["I_sev"],
+                self.params["Q_asym"],
+                self.params["Q_sym"],
+                self.params["Q_sev"],
+                self.params["R"],
+                self.params["D"],
+            ]
+    
+    
     def _simulate_ivp(self, t, params, method) -> np.ndarray:
         """
         Solve ODE system with solve_ivp
@@ -823,28 +1054,17 @@ class Simulator:
             fun=self._build_ode_system,
             t_span=[t[0], t[-1]],
             t_eval=t,
-            y0=np.array(
-                [
-                    self.params["M"],
-                    self.params["V"],
-                    self.params["S"],
-                    self.params["E_tr"],
-                    self.params["E_nt"],
-                    self.params["I_asym"],
-                    self.params["I_sym"],
-                    self.params["I_sev"],
-                    self.params["Q_asym"],
-                    self.params["Q_sym"],
-                    self.params["Q_sev"],
-                    self.params["R"],
-                    self.params["D"],
-                ]
-            ).ravel(),
+            y0=np.array(self._prepare_y0()).ravel(),
             method=method,
         )
 
         result = [
-            np.array([sol.y[:, i].reshape((13, self.J, self.K))[j] for i in range(len(t))])
+            np.array(
+                [
+                    sol.y[:, i].reshape((self.param_count, self.J, self.K))[j]
+                    for i in range(len(t))
+                ]
+            )
             for j in range(13)
         ]
 
@@ -868,28 +1088,17 @@ class Simulator:
         sol = odeint(
             func=self._build_ode_system,
             t=t,
-            y0=np.array(
-                [
-                    self.params["M"],
-                    self.params["V"],
-                    self.params["S"],
-                    self.params["E_tr"],
-                    self.params["E_nt"],
-                    self.params["I_asym"],
-                    self.params["I_sym"],
-                    self.params["I_sev"],
-                    self.params["Q_asym"],
-                    self.params["Q_sym"],
-                    self.params["Q_sev"],
-                    self.params["R"],
-                    self.params["D"],
-                ]
-            ).ravel(),
+            y0=np.array(self._prepare_y0()).ravel(),
             tfirst=True,
         )
 
         result = [
-            np.array([sol[i, :].reshape((13, self.J, self.K))[j] for i in range(len(t))])
+            np.array(
+                [
+                    sol[i, :].reshape((self.param_count, self.J, self.K))[j]
+                    for i in range(len(t))
+                ]
+            )
             for j in range(13)
         ]
 
