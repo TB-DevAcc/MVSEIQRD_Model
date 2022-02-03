@@ -7,6 +7,10 @@ from typing import Tuple
 class Simulator:
     def __init__(self) -> None:
         self.ode_list = None
+        self.supported_sim_types = [
+            "S I",
+            "M V S E2 I3 Q3 R D",
+        ]
         self.simulation_type = None
         self.params = None
         self.J = 1
@@ -110,6 +114,7 @@ class Simulator:
             Calculated values of equation of S for current iteration
         """
         res = []
+
         cls = self.simulation_type.split()
         if "M" in cls:
             rho_mat = self.params["rho_mat"]
@@ -197,6 +202,7 @@ class Simulator:
             Calculated values of equation of Ent for current iteration
         """
         res = []
+
         cls = self.simulation_type.split()
         if "I3" in cls:
             beta_asym = self.params["beta_asym"]
@@ -281,6 +287,7 @@ class Simulator:
             Calculated values of equation of Etr for current iteration
         """
         res = []
+
         cls = self.simulation_type.split()
         if "I3" in cls:
             beta_sym = self.params["beta_sym"]

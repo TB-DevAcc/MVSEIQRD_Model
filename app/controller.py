@@ -192,6 +192,13 @@ class Controller:
         self.default_values = self._load_default_values(default_values_path)
         self.default_domains = self._load_default_domains(default_domains_path)
 
+    def reset(self):
+        """
+        Resets the current controllers paramter dict to None
+        """
+        for key in self._params:
+            self._params[key] = None
+
     def _load_default_values(self, default_values_path) -> dict:
         try:
             file = json.loads(default_values_path)[0]
@@ -298,7 +305,31 @@ class Controller:
                 # TODO check correct shape of beta
                 pass
 
-    def initialize_parameters(self, params: dict = None) -> None:
+            # check if classes add up to one
+            one = 1.0
+            for key in {
+                "M",
+                "V",
+                "S",
+                "E",
+                "E2",
+                "I",
+                "I2",
+                "I3",
+                "Q",
+                "Q2",
+                "Q3",
+                "R",
+                "D",
+            } & set(params.keys()):
+                one -= params[key]
+            # TODO temporarily outcommented; check class domains
+            # if not -1.0e-14 < one < 1.0e-14:
+            #     raise ValueError(
+            #         "Epidemiological classes do not add up to one." "Check input parameters."
+            #     )
+
+    def initialize_parameters(self, params: dict = None) -> dict:
         """
         Initializes all parameters either by default or by setting it with supplied params dict
         """
@@ -307,9 +338,9 @@ class Controller:
             params = {}
         for key, val in self.default_values.items():
             if key in params:
-                self._params[key] = val
+                self._params[key] = params[key]
             else:
-                self._params[key] = self.default_values[key]
+                self._params[key] = val
 
         # TODO load data from DataHandler and put them into params
         # base_data = DataHandler()._get_base_values()
@@ -317,7 +348,9 @@ class Controller:
         # make sure types are clear first under valid_domain and then initialize within bounds
         self.check_params(self._params)
 
-    def set_values(self, params: dict) -> None:
+        return self._params
+
+    def set_params(self, params: dict) -> None:
         """
         Sets a class attribute's value
 
@@ -329,11 +362,11 @@ class Controller:
             value : Any
                 value of class attribute described by key
         """
-        self.check_params(params)
         for key, val in params:
             self._params[key] = val
+        self.check_params(self._params)
 
-    def get_values(self, keys: list) -> dict:
+    def get_params(self, keys: list = None) -> dict:
         """
         Prepares class attributes for retrieval and makes sure values are valid
         
@@ -342,4 +375,7 @@ class Controller:
             keys : list
                 list of strings, that are keys for parameters
         """
-        return {key: self._params[key] for key in keys}
+        if keys:
+            return {key: self._params[key] for key in keys}
+        else:
+            return self._params
