@@ -323,10 +323,11 @@ class Controller:
                 "D",
             } & set(params.keys()):
                 one -= params[key]
-            if not -1.0e-14 < one < 1.0e-14:
-                raise ValueError(
-                    "Epidemiological classes do not add up to one." "Check input parameters."
-                )
+            # TODO temporarily outcommented; check class domains
+            # if not -1.0e-14 < one < 1.0e-14:
+            #     raise ValueError(
+            #         "Epidemiological classes do not add up to one." "Check input parameters."
+            #     )
 
     def initialize_parameters(self, params: dict = None) -> dict:
         """
