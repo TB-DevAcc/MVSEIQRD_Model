@@ -239,7 +239,7 @@ class Controller:
             )
 
         if len(domain) == 2:
-            if domain[0] < value < domain[1]:
+            if domain[0] <= value <= domain[1]:
                 return True
         else:
             raise ValueError(
@@ -261,12 +261,13 @@ class Controller:
         """
         # check domain
         for attr, val_list in params.items():
-            for val in val_list:
-                if not self.valid_domain(attr, val):
-                    raise AttributeError(
-                        f"Invalid attribute, {attr} can not be of value {val}. "
-                        "Check domain definition."
-                    )
+            if isinstance(val_list, list):
+                for val in val_list:
+                    if not self.valid_domain(attr, val):
+                        raise AttributeError(
+                            f"Invalid attribute, {attr} can not be of value {val}. "
+                            "Check domain definition."
+                        )
 
         # make sure params[J] (entities number) and params[K] (age group number) are available
         try:
@@ -284,42 +285,43 @@ class Controller:
                     self._params["K"] = len(params[key][0])
                     break
 
+        # FIXME Dimensions see issue #28
         # make sure entities and age groups are correct in every parameter
-        for key in params:
-            if key not in ["K", "J", "beta"]:
-                if len(params[key][0]) != params["K"]:
-                    raise ValueError(
-                        f"K:{self._K} does not match the first dimension of the"
-                        " parameters. If you intended to not subdivide the different classes,"
-                        " choose K=1 and wrap your parameters in a list."
-                    )
-            elif key == "beta":
-                # TODO check correct shape of beta
-                pass
+        # for key in params:
+        #     if key not in ["K", "J", "beta"]:
+        #         if len(params[key][0]) != params["K"]:
+        #             raise ValueError(
+        #                 f"K:{self._K} does not match the first dimension of the"
+        #                 " parameters. If you intended to not subdivide the different classes,"
+        #                 " choose K=1 and wrap your parameters in a list."
+        #             )
+        #     elif key == "beta":
+        #         # TODO check correct shape of beta
+        #         pass
 
-            # check if classes add up to one
-            one = 1.0
-            for key in {
-                "M",
-                "V",
-                "S",
-                "E",
-                "E2",
-                "I",
-                "I2",
-                "I3",
-                "Q",
-                "Q2",
-                "Q3",
-                "R",
-                "D",
-            } & set(params.keys()):
-                one -= params[key]
-            # TODO temporarily outcommented; check class domains
-            # if not -1.0e-14 < one < 1.0e-14:
-            #     raise ValueError(
-            #         "Epidemiological classes do not add up to one." "Check input parameters."
-            #     )
+        #     # check if classes add up to one
+        #     one = 1.0
+        #     for key in {
+        #         "M",
+        #         "V",
+        #         "S",
+        #         "E",
+        #         "E2",
+        #         "I",
+        #         "I2",
+        #         "I3",
+        #         "Q",
+        #         "Q2",
+        #         "Q3",
+        #         "R",
+        #         "D",
+        #     } & set(params.keys()):
+        #         one -= params[key]
+        # TODO temporarily outcommented; check class domains
+        # if not -1.0e-14 < one < 1.0e-14:
+        #     raise ValueError(
+        #         "Epidemiological classes do not add up to one." "Check input parameters."
+        #     )
 
     def initialize_parameters(self, params: dict = None) -> dict:
         """
