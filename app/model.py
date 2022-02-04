@@ -66,7 +66,7 @@ class Model:
             simulation_type (e.g. "S I", "S E I R", "M V S E2 I3 Q3 R D")
         """
         # Not None keys
-        keys = [key for key in params.keys if params[key]]
+        keys = [key for key in params.keys() if params[key]]
 
         sim_type = ""
 
@@ -112,7 +112,7 @@ class Model:
             sim_type += " Q"
 
         # R
-        if "gamma" in keys:
+        if "gamma_sym" in keys:
             sim_type += " R"
 
         # D
@@ -124,7 +124,7 @@ class Model:
         else:
             raise ValueError(
                 f"Simulation type {sim_type} not supported."
-                "For supported simulation types see Controller.supported_sim_types"
+                "For supported simulation types see Controller.supported_sim_types."
             )
 
     def reset_parameters(self):
