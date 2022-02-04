@@ -1,6 +1,6 @@
-from controller import Controller
-from simulator import Simulator
-from view import View
+from .controller import Controller
+from .simulator import Simulator
+from .view import View
 
 
 class Model:
@@ -8,8 +8,8 @@ class Model:
         self,
         params: dict = None,
         fill_missing_values: bool = True,
-        default_values_path="/data/default_values.json",
-        default_domains_path="/data/default_domains.json",
+        default_values_path="data/default_values.json",
+        default_domains_path="data/default_domains.json",
     ) -> None:
         """
         Epidemiological model for the coronavirus pandemic based on the SI Model. 
