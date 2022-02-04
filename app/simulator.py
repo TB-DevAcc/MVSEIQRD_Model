@@ -1,7 +1,8 @@
+from typing import Tuple
+
 import numpy as np
 import scipy
 from scipy.integrate import odeint, solve_ivp
-from typing import Tuple
 
 
 class Simulator:
@@ -240,16 +241,10 @@ class Simulator:
                             np.sum(
                                 [
                                     beta_sym[int(t - 1), j, l, k]
-                                    * (
-                                        1
-                                        - psi[int(t - 1), j, l] * psi[int(t - 1), j, k]
-                                    )
+                                    * (1 - psi[int(t - 1), j, l] * psi[int(t - 1), j, k])
                                     * I_sym[j, l]
                                     + beta_sev[int(t - 1), j, l, k]
-                                    * (
-                                        1
-                                        - psi[int(t - 1), j, l] * psi[int(t - 1), j, k]
-                                    )
+                                    * (1 - psi[int(t - 1), j, l] * psi[int(t - 1), j, k])
                                     * I_sev[j, l]
                                     for l in range(self.K)
                                 ]
@@ -470,12 +465,7 @@ class Simulator:
                     np.array(
                         [
                             (
-                                (
-                                    1
-                                    - self._calc_sigma(
-                                        t, j, k, I_sev[j, k], Q_sev[j, k]
-                                    )
-                                )
+                                (1 - self._calc_sigma(t, j, k, I_sev[j, k], Q_sev[j, k]))
                                 * gamma_sev_r[int(t - 1), j, k]
                                 + self._calc_sigma(t, j, k, I_sev[j, k], Q_sev[j, k])
                                 * gamma_sev_d[int(t - 1), j, k]
@@ -641,12 +631,7 @@ class Simulator:
                     np.array(
                         [
                             (
-                                (
-                                    1
-                                    - self._calc_sigma(
-                                        t, j, k, I_sev[j, k], Q_sev[j, k]
-                                    )
-                                )
+                                (1 - self._calc_sigma(t, j, k, I_sev[j, k], Q_sev[j, k]))
                                 * gamma_sev_r[int(t - 1), j, k]
                                 + self._calc_sigma(t, j, k, I_sev[j, k], Q_sev[j, k])
                                 * gamma_sev_d[int(t - 1), j, k]
@@ -912,7 +897,8 @@ class Simulator:
         dict
             result of simulation
         """
-        return self._simulate_RK45(params["t"], params)
+        t = np.linspace(0, params["t"], params["t"])
+        return self._simulate_RK45(t, params)
 
     def _calc_sigma(self, t, j, k, I_sev_jk, Q_sev_jk) -> np.float64:
         """
@@ -1062,10 +1048,7 @@ class Simulator:
 
         result = [
             np.array(
-                [
-                    sol.y[:, i].reshape((self.param_count, self.J, self.K))[j]
-                    for i in range(len(t))
-                ]
+                [sol.y[:, i].reshape((self.param_count, self.J, self.K))[j] for i in range(len(t))]
             )
             for j in range(13)
         ]
@@ -1088,18 +1071,12 @@ class Simulator:
             solution of ODE system solved with scipy.solve_ivp
         """
         sol = odeint(
-            func=self._build_ode_system,
-            t=t,
-            y0=np.array(self._prepare_y0()).ravel(),
-            tfirst=True,
+            func=self._build_ode_system, t=t, y0=np.array(self._prepare_y0()).ravel(), tfirst=True,
         )
 
         result = [
             np.array(
-                [
-                    sol[i, :].reshape((self.param_count, self.J, self.K))[j]
-                    for i in range(len(t))
-                ]
+                [sol[i, :].reshape((self.param_count, self.J, self.K))[j] for i in range(len(t))]
             )
             for j in range(13)
         ]
