@@ -134,7 +134,7 @@ class Model:
         """
         self.controller.reset()
 
-    def run(self) -> None:
+    def run(self) -> dict:
         """
         Retrieves parameter, runs the MVRSEIQRI simulation and updates the view.
         This is equivalent to simulating one timestep.
@@ -145,6 +145,8 @@ class Model:
         simulation_type = self.detect_simulation_type(params)
         params = self.simulator.run(params=params, simulation_type=simulation_type)
         self._update_params(params=params, fill_missing_values=False, reset=False)
-
+        params = self.controller.get_params()
+        
         # update the view
-        self._update_view(self.controller.get_params())
+        self._update_view(params)
+        return params
