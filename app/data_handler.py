@@ -4,9 +4,9 @@ import numpy as np
 
 class DataHandler:
     def __init__(
-            self,
-            default_age_group_data_path='simulation_test/altersgruppen.csv',
-            default_hospital_beds_data_path='simulation_test/krankenhausbetten.csv'
+        self,
+        default_age_group_data_path="data/simulation_test/altersgruppen.csv",
+        default_hospital_beds_data_path="data/simulation_test/krankenhausbetten.csv",
     ):
         self.default_base_data = self._load_base_values(default_age_group_data_path, default_hospital_beds_data_path)
 
@@ -126,7 +126,7 @@ class DataHandler:
 
         return beds
 
-    def _get_base_values(self) -> dict:
+    def get_base_values(self) -> dict:
         """
         Return loaded base data for controller
 

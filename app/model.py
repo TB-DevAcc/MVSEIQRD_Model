@@ -28,6 +28,17 @@ class Model:
         self.simulator = Simulator()
         self.view = View()
 
+        # TODO load data from DataHandler and put them into params
+        # self.data_handler = DataHandler()
+        # base_data = self.data_handler.get_base_values()
+        # if len(base_data) > 0:
+        #     params = {"N": [], "Beds": []}
+        #     for key, value in self.data_handler.get_base_values().items():
+        #         params["N"].append(value["N"])
+        #         params["Beds"].append(value["B"])
+        #
+        # self.controller.set_params(params, False)
+
         self._update_params(params, fill_missing_values, reset=True)
 
     def _update_view(self, params) -> None:
@@ -144,13 +155,24 @@ class Model:
         params = self.controller.get_params()
         simulation_type = self.detect_simulation_type(params)
         retParams = {}
-        retParams["M"], retParams["V"], retParams["S"], retParams["E_tr"], retParams["E_nt"], \
-        retParams["I_asym"], retParams["I_sym"], retParams["I_sev"], retParams["Q_asym"], \
-        retParams["Q_sym"], retParams["Q_sev"], retParams["R"], retParams["D"] \
-            = self.simulator.run(params=params, simulation_type=simulation_type)
+        (
+            retParams["M"],
+            retParams["V"],
+            retParams["S"],
+            retParams["E_tr"],
+            retParams["E_nt"],
+            retParams["I_asym"],
+            retParams["I_sym"],
+            retParams["I_sev"],
+            retParams["Q_asym"],
+            retParams["Q_sym"],
+            retParams["Q_sev"],
+            retParams["R"],
+            retParams["D"],
+        ) = self.simulator.run(params=params, simulation_type=simulation_type)
         self._update_params(params=retParams, fill_missing_values=True, reset=False)
         params = self.controller.get_params()
-        
+
         # update the view
         self._update_view(params)
         return params
