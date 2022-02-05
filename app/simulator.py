@@ -922,7 +922,6 @@ class Simulator:
         np.float64
             calculated value of sigma for current iteration
         """
-        N_total = self.params["N_total"]
         N = self.params["N"]
         N_total = np.sum(N, axis=1)
         Beds = self.params["Beds"]
@@ -1039,6 +1038,18 @@ class Simulator:
         np.ndarray
             solution of ODE system solved with scipy.solve_ivp
         """
+        # TODO find better way
+        for key in params:
+            if params[key] != None:
+                if key in [ "beta_asym", "beta_sym", "beta_sev"]:
+                    self.params[key] = np.ones((int(t[-1]), self.J, self.K, self.K)) * np.array(params[key])
+                elif key in ["M", "V", "R", "S", "E", "E_tr", "E_nt",
+                             "I", "I_asym", "I_sym", "I_sev", "Q", "Q_asym", "Q_sym", "Q_sev",
+                             "D", "N"]:
+                    self.params[key] = np.ones((self.J, self.K)) * np.array(params[key])
+                elif key not in ["Beds"]:
+                    self.params[key] = np.ones((int(t[-1]), self.J, self.K)) * np.array(params[key])
+
         sol = solve_ivp(
             fun=self._build_ode_system,
             t_span=[t[0], t[-1]],

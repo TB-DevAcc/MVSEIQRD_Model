@@ -356,8 +356,8 @@ class Controller:
             value : Any
                 value of class attribute described by key
         """
-        for key, val in params:
-            self._params[key] = val
+        for key in params:
+            self._params[key] = params[key]
         self.check_params(self._params)
 
     def get_params(self, keys: list = None) -> dict:

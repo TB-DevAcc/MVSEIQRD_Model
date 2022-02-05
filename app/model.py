@@ -30,7 +30,7 @@ class Model:
 
         self._update_params(params, fill_missing_values, reset=True)
 
-    def _update_view(self) -> None:
+    def _update_view(self, params) -> None:
         """
         Updates the view if new data is available
         """
@@ -143,8 +143,12 @@ class Model:
         # call simulator with simulation type and current parameters
         params = self.controller.get_params()
         simulation_type = self.detect_simulation_type(params)
-        params = self.simulator.run(params=params, simulation_type=simulation_type)
-        self._update_params(params=params, fill_missing_values=False, reset=False)
+        retParams = {}
+        retParams["M"], retParams["V"], retParams["S"], retParams["E_tr"], retParams["E_nt"], \
+        retParams["I_asym"], retParams["I_sym"], retParams["I_sev"], retParams["Q_asym"], \
+        retParams["Q_sym"], retParams["Q_sev"], retParams["R"], retParams["D"] \
+            = self.simulator.run(params=params, simulation_type=simulation_type)
+        self._update_params(params=retParams, fill_missing_values=True, reset=False)
         params = self.controller.get_params()
         
         # update the view
