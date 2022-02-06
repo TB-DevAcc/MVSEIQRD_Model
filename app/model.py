@@ -1,6 +1,6 @@
-from controller import Controller
-from simulator import Simulator
-from view import View
+from .controller import Controller
+from .simulator import Simulator
+from .view import View
 
 
 class Model:
@@ -8,8 +8,8 @@ class Model:
         self,
         params: dict = None,
         fill_missing_values: bool = True,
-        default_values_path="/data/default_values.json",
-        default_domains_path="/data/default_domains.json",
+        default_values_path="data/default_values.json",
+        default_domains_path="data/default_domains.json",
     ) -> None:
         """
         Epidemiological model for the coronavirus pandemic based on the SI Model. 
@@ -66,7 +66,7 @@ class Model:
             simulation_type (e.g. "S I", "S E I R", "M V S E2 I3 Q3 R D")
         """
         # Not None keys
-        keys = [key for key in params.keys if params[key]]
+        keys = [key for key in params.keys() if params[key]]
 
         sim_type = ""
 
@@ -112,7 +112,7 @@ class Model:
             sim_type += " Q"
 
         # R
-        if "gamma" in keys:
+        if "gamma_sym" in keys:
             sim_type += " R"
 
         # D
@@ -124,7 +124,7 @@ class Model:
         else:
             raise ValueError(
                 f"Simulation type {sim_type} not supported."
-                "For supported simulation types see Controller.supported_sim_types"
+                "For supported simulation types see Controller.supported_sim_types."
             )
 
     def reset_parameters(self):
@@ -134,7 +134,7 @@ class Model:
         """
         self.controller.reset()
 
-    def run(self) -> None:
+    def run(self) -> dict:
         """
         Retrieves parameter, runs the MVRSEIQRI simulation and updates the view.
         This is equivalent to simulating one timestep.
@@ -145,6 +145,8 @@ class Model:
         simulation_type = self.detect_simulation_type(params)
         params = self.simulator.run(params=params, simulation_type=simulation_type)
         self._update_params(params=params, fill_missing_values=False, reset=False)
-
+        params = self.controller.get_params()
+        
         # update the view
-        self._update_view(self.controller.get_params())
+        self._update_view(params)
+        return params
