@@ -1,0 +1,61 @@
+digraph G {
+      { 
+      node [shape=box style=filled]
+      M [fillcolor="#DAE8FC"]
+      V [fillcolor="#DAE8FC"]
+      R [fillcolor="#DAE8FC"]
+      S [fillcolor="#F5F5F5"]
+      E_nt [fillcolor="#F8CECC"]
+      E_tr [fillcolor="#F8CECC"]
+      I_asym [fillcolor="#F8CECC"]
+      I_asym [fillcolor="#F8CECC"]
+      I_sym [fillcolor="#F8CECC"]
+      I_sev [fillcolor="#F8CECC"]
+      I_asym [fillcolor="#F8CECC"]
+      Q_asym [fillcolor="#F8CECC"]
+      Q_asym [fillcolor="#F8CECC"]
+      Q_sym [fillcolor="#F8CECC"]
+      Q_sev [fillcolor="#F8CECC"]
+      I_asym [fillcolor="#F8CECC"]
+      I_sym [fillcolor="#F8CECC"]
+      I_sev [fillcolor="#F8CECC"]
+      Q_asym [fillcolor="#F8CECC"]
+      Q_sym [fillcolor="#F8CECC"]
+      Q_sev [fillcolor="#F8CECC"]
+      I_sev [fillcolor="#F8CECC"]
+      Q_sev [fillcolor="#F8CECC"]
+      D [fillcolor="#DAE8FC"]
+    }
+    rankdir=LR;
+    M -> S [color=black, label=rho_mat];
+    S -> V [color=black, label=nu];
+    V -> S [color=black, label=rho_vac];
+    R -> S [color=black, label=rho_rec];
+    S -> E_nt [color=black, label=beta];
+    S -> E_tr [color=black, label=beta];
+    # E->I
+    E_nt -> I_asym [color=black, label=epsilon];
+    E_tr -> Q_asym [color=black, label=epsilon];
+    # I--I
+    I_asym -> I_sym [color=black, label=mu_sym];
+    I_asym -> I_sev [color=black, label=mu_sev];
+    I_sym -> I_sev [color=black, label=mu_sev];
+    I_sev -> I_sym [color=black, label=mu_sym];
+    # I->Q
+    I_asym -> Q_asym [color=black, label=tau_asym];
+    # Q--Q
+    Q_asym -> Q_sym [color=black, label=tau_sym];
+    Q_asym -> Q_sev [color=black, label=tau_sev];
+    Q_sym -> Q_sev [color=black, label=tau_sev];
+    Q_sev -> Q_sym [color=black, label=tau_sym];
+    # ->R
+    I_asym -> R [color=black, label=gamma];
+    I_sym -> R [color=black, label=gamma];
+    I_sev -> R [color=black, label=gamma];
+    Q_asym -> R [color=black, label=gamma];
+    Q_sym -> R [color=black, label=gamma];
+    Q_sev -> R [color=black, label=gamma];
+    # ->D
+    I_sev -> D [color=black, label=sigma];
+    Q_sev -> D [color=black, label=sigma];
+}
