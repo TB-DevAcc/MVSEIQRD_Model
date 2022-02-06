@@ -146,7 +146,10 @@ class Model:
         params = self.simulator.run(params=params, simulation_type=simulation_type)
         self._update_params(params=params, fill_missing_values=False, reset=False)
         params = self.controller.get_params()
-        
+
         # update the view
         self._update_view(params)
         return params
+
+    def run_app(self):
+        return self.view.run_app()
