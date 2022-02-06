@@ -1,16 +1,24 @@
 import pandas as pd
 import numpy as np
+import geopands as gpd
 
 
 class DataHandler:
+    """
+    Read data from files into program
+    """
     def __init__(
         self,
         default_age_group_data_path="data/simulation_test/altersgruppen.csv",
         default_hospital_beds_data_path="data/simulation_test/krankenhausbetten.csv",
+        default_recorded_covid_cases_path="data/RKI_COVID19.csv",
+        default_district_geometry_path="data/RKI_Corona_Landkreise.shp"
     ):
-        self.default_base_data = self._load_base_values(default_age_group_data_path, default_hospital_beds_data_path)
+        self.default_initial_data = self._load_simulation_initial_values(default_age_group_data_path, default_hospital_beds_data_path)
+        self.default_recorded_cases = self._load_recorded_covid_cases(default_recorded_covid_cases_path)
+        self.default_district_geometries = self._load_district_geometries(default_district_geometry_path)
 
-    def _load_base_values(self, default_age_group_data_path, default_hospital_beds_data_path) -> pd.DataFrame:
+    def _load_simulation_initial_values(self, default_age_group_data_path, default_hospital_beds_data_path) -> pd.DataFrame:
         """
         Load base data of districts for simulation of csv files
 
@@ -126,23 +134,132 @@ class DataHandler:
 
         return beds
 
-    def get_base_values(self) -> dict:
+    def get_simulation_initial_values(self) -> dict:
         """
-        Return loaded base data for controller
+        Return loaded initial data for simulation
 
         Returns
         -------
         dict
-            base_values of districts for simulation
+            initial_values of districts for simulation
         """
-        base_values = self.default_base_data.loc[:, self.default_base_data.columns != "Landkreis"] \
+        initial_values = self.default_initial_data.loc[:, self.default_initial_data.columns != "Landkreis"] \
             .set_index('IdLandkreis') \
             .to_dict('index')
 
-        for (key, value) in base_values.items():
-            base_values[key]['N_total'] = base_values[key].pop('Insgesamt')
-            base_values[key]['B'] = base_values[key].pop('Krankenhausbetten')
-            base_values[key]['N'] = np.array([value2 for key2, value2 in value.items() if key2 not in ['N', 'B']])
-            base_values[key] = {key2: base_values[key][key2] for key2 in base_values[key] if key2 in ['N_total', 'N', 'B']}
+        for (key, value) in initial_values.items():
+            initial_values[key]['N_total'] = initial_values[key].pop('Insgesamt')
+            initial_values[key]['B'] = initial_values[key].pop('Krankenhausbetten')
+            initial_values[key]['N'] = np.array([value2 for key2, value2 in value.items() if key2 not in ['N', 'B']])
+            initial_values[key] = {key2: initial_values[key][key2] for key2 in initial_values[key] if key2 in ['N_total', 'N', 'B']}
 
-        return base_values
+        return initial_values
+
+    def _load_recorded_covid_cases(self, default_recorded_covid_cases_path) -> pd.DataFrame:
+        """
+        Read the covid csv-file into a DataFrame
+
+        Parameters
+        ----------
+        default_recorded_covid_cases_path : str
+            Path to the csv-File
+
+        Returns
+        -------
+        pd.DataFrame
+            A DataFrame of covid-19 from RKI-Germany
+        """
+        covid_df = pd.read_csv(default_recorded_covid_cases_path, sep=",", dtype={"IdLandkreis": str})
+        covid_df = covid_df[["Bundesland", "Landkreis", "Altersgruppe", "Meldedatum", "AnzahlFall",
+                             "AnzahlTodesfall", "NeuGenesen", "IdLandkreis"]]
+        covid_df.rename(columns={"IdLandkreis": "RS"}, inplace=True)
+        return covid_df
+
+    def get_recorded_covid_cases(self):
+        # TODO
+        ...
+
+    def _load_district_geometries(self, default_district_geometry_path) -> pd.DataFrame:
+        """
+        Read the covid Shapefile with all geometry data into a DataFrame
+
+        Parameters
+        ----------
+        default_district_geometry_path : str
+            Path to the shape file with the region-key (Regionalschlüssel) and the geometry-Data
+
+        Returns
+        -------
+        pd.DataFrame
+            A DataFrame of the Shapefile from RKI-Germany
+        """
+        rs_df = gpd.read_file(default_district_geometry_path)
+        rs_df = rs_df[["GEN", "RS", "geometry"]]
+        rs_df.sort_values(by=["RS"], inplace=True)
+        return rs_df
+
+    def get_district_geometries(self):
+        # TODO
+        ...
+
+    def get_real_covid_data(self) -> pd.DataFrame:
+        """
+
+        Returns
+        -------
+        pd.DataFrame
+        """
+        c_plt_df = self.add_seven_day_average(self.default_recorded_cases, "AnzahlFall")
+        c_plt_df = self.add_seven_day_average(c_plt_df, "NeuGenesen")
+        c_plt_df = self.add_seven_day_average(c_plt_df, "AnzahlTodesfall")
+
+        c_plt_df['Meldedatum'] = pd.to_datetime(c_plt_df['Meldedatum'])
+        c_plt_df["NeuGenesen"] = c_plt_df["NeuGenesen"].abs()
+        c_plt_df["NeuGenesen_seven_day_average"] = c_plt_df["NeuGenesen_seven_day_average"].abs()
+
+        return c_plt_df
+
+    def get_dates_of_covid_data(self) -> list:
+        """
+        Give a list of all dates
+
+        Returns
+        -------
+        list
+            a sorted list of all dates
+        """
+        lst = self.default_recorded_cases.drop_duplicates(subset="Meldedatum")
+        lst = lst["Meldedatum"].tolist()
+        lst = sorted(lst)
+        return lst
+
+    def get_values_of_day(self, day):
+        return self.default_recorded_cases[(self.default_recorded_cases.Meldedatum == day)]
+
+    def get_grouped_by_age(self, group_age):
+        return self.default_recorded_cases[(self.default_recorded_cases.Altersgruppe == group_age)].sort_values(by=["Meldedatum"], inplace=True)
+
+    def get_highest_infection(self, date, case) -> int:
+        """
+        Find the biggest number of all infections
+
+        Parameters
+        ----------
+        date : list
+            list of all dates
+        case :
+
+        Returns
+        -------
+        int
+            Highest infection
+        """
+        new_df = self.default_recorded_cases[self.default_recorded_cases.Meldedatum.isin(date)]
+        new_df = new_df.groupby(by=["Meldedatum", "RS"]).sum()
+
+        # Ausreißer rausfiltern
+        lst = new_df[case].tolist()
+        if len(lst) > 100:
+            lst = sorted(lst)
+            del lst[len(lst) - 10:len(lst)]
+        return max(lst)

@@ -332,7 +332,7 @@ class Controller:
         #         "Epidemiological classes do not add up to one." "Check input parameters."
         #     )
 
-    def initialize_parameters(self, params: dict = None) -> dict:
+    def initialize_parameters(self, params: dict = None, load_base_data: bool = False) -> dict:
         """
         Initializes all parameters either by default or by setting it with supplied params dict
         """
@@ -347,7 +347,7 @@ class Controller:
 
         # TODO load data from DataHandler and put them into params
         if load_base_data:
-            base_data = self.data_handler.get_base_values()
+            base_data = self.data_handler.get_simulation_initial_values()
             if len(base_data) > 0:
                 self._params["N"], self._params["Beds"] = [], []
                 for key, value in base_data.items():
