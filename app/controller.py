@@ -1,10 +1,12 @@
 import json
+import numpy as np
+from .data_handler import DataHandler
 
 
 class Controller:
     """
     Controls parameters and handles information from view.
-    
+
     Parameters
     ----------
     # Population classes
@@ -191,6 +193,7 @@ class Controller:
         }
         self.default_values = self._load_json(default_values_path)
         self.default_domains = self._load_json(default_domains_path)
+        self.data_handler = DataHandler()
 
     def reset(self):
         """
@@ -239,8 +242,14 @@ class Controller:
             )
 
         if len(domain) == 2:
-            if domain[0] <= value <= domain[1]:
+            if type(value) == np.ndarray:
+                for val in value:
+                    if domain[0] > val or val > domain[1]:
+                        return False
                 return True
+            else:
+                if domain[0] <= value <= domain[1]:
+                    return True
         else:
             raise ValueError(
                 "Illegal domain configuration." f" Domain {domain} has more than two boundaries."
@@ -337,7 +346,13 @@ class Controller:
                 self._params[key] = val
 
         # TODO load data from DataHandler and put them into params
-        # base_data = DataHandler()._get_base_values()
+        if load_base_data:
+            base_data = self.data_handler.get_base_values()
+            if len(base_data) > 0:
+                self._params["N"], self._params["Beds"] = [], []
+                for key, value in base_data.items():
+                    self._params["N"].append(value["N"])
+                    self._params["Beds"].append(value["B"])
 
         # make sure types are clear first under valid_domain and then initialize within bounds
         self.check_params(self._params)
@@ -356,14 +371,14 @@ class Controller:
             value : Any
                 value of class attribute described by key
         """
-        for key, val in params:
-            self._params[key] = val
+        for key in params:
+            self._params[key] = params[key]
         self.check_params(self._params)
 
     def get_params(self, keys: list = None) -> dict:
         """
         Prepares class attributes for retrieval and makes sure values are valid
-        
+
         Parameters
         ----------
             keys : list

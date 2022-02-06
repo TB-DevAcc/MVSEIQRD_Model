@@ -70,7 +70,7 @@ class Simulator:
         res = []
         rho_mat = self.params["rho_mat"]
         M = self.params["M"]
-        res.append(-1 * rho_mat[int(t - 1)] * M)
+        res.append(-1 * rho_mat[int(t)] * M)
 
         return np.array(res).sum(axis=0)
 
@@ -92,11 +92,11 @@ class Simulator:
 
         rho_vac = self.params["rho_vac"]
         V = self.params["V"]
-        res.append(-1 * rho_vac[int(t - 1)] * V)
+        res.append(-1 * rho_vac[int(t)] * V)
 
         nu = self.params["nu"]
         S = self.params["S"]
-        res.append(nu[int(t - 1)] * S)
+        res.append(nu[int(t)] * S)
 
         return np.array(res).sum(axis=0)
 
@@ -120,17 +120,17 @@ class Simulator:
         if "M" in cls:
             rho_mat = self.params["rho_mat"]
             M = self.params["M"]
-            res.append(rho_mat[int(t - 1)] * M)
+            res.append(rho_mat[int(t)] * M)
         if "V" in cls:
             rho_vac = self.params["rho_vac"]
             nu = self.params["nu"]
             S = self.params["S"]
             V = self.params["V"]
-            res.append(rho_vac[int(t - 1)] * V - nu[int(t - 1)] * S)
+            res.append(rho_vac[int(t)] * V - nu[int(t)] * S)
         if "R" in cls:
             rho_rec = self.params["rho_rec"]
             R = self.params["R"]
-            res.append(rho_rec[int(t - 1)] * R)
+            res.append(rho_rec[int(t)] * R)
         if "I3" in cls:
             S = self.params["S"]
             N = self.params["N"]
@@ -147,9 +147,9 @@ class Simulator:
                         [
                             -np.sum(
                                 [
-                                    beta_asym[int(t - 1), j, l, k] * I_asym[j, l]
-                                    + beta_sym[int(t - 1), j, l, k] * I_sym[j, l]
-                                    + beta_sev[int(t - 1), j, l, k] * I_sev[j, l]
+                                    beta_asym[int(t), j, l, k] * I_asym[j, l]
+                                    + beta_sym[int(t), j, l, k] * I_sym[j, l]
+                                    + beta_sev[int(t), j, l, k] * I_sev[j, l]
                                     for l in range(self.K)
                                 ]
                             )
@@ -216,7 +216,7 @@ class Simulator:
                         [
                             np.sum(
                                 [
-                                    beta_asym[int(t - 1), j, l, k] * I_asym[j, l]
+                                    beta_asym[int(t), j, l, k] * I_asym[j, l]
                                     for l in range(self.K)
                                 ]
                             )
@@ -240,11 +240,11 @@ class Simulator:
                         [
                             np.sum(
                                 [
-                                    beta_sym[int(t - 1), j, l, k]
-                                    * (1 - psi[int(t - 1), j, l] * psi[int(t - 1), j, k])
+                                    beta_sym[int(t), j, l, k]
+                                    * (1 - psi[int(t), j, l] * psi[int(t), j, k])
                                     * I_sym[j, l]
-                                    + beta_sev[int(t - 1), j, l, k]
-                                    * (1 - psi[int(t - 1), j, l] * psi[int(t - 1), j, k])
+                                    + beta_sev[int(t), j, l, k]
+                                    * (1 - psi[int(t), j, l] * psi[int(t), j, k])
                                     * I_sev[j, l]
                                     for l in range(self.K)
                                 ]
@@ -263,7 +263,7 @@ class Simulator:
         # method _build_dE_ntdt is only called if E2 is in simulation_type so this has to be executed anways
         epsilon = self.params["epsilon"]
         Ent = self.params["E_nt"]
-        res.append(-1 * epsilon[int(t - 1)] * Ent)
+        res.append(-1 * epsilon[int(t)] * Ent)
 
         return np.array(res).sum(axis=0)
 
@@ -298,13 +298,13 @@ class Simulator:
                         [
                             np.sum(
                                 [
-                                    beta_sym[int(t - 1), j, l, k]
-                                    * psi[int(t - 1), j, l]
-                                    * psi[int(t - 1), j, k]
+                                    beta_sym[int(t), j, l, k]
+                                    * psi[int(t), j, l]
+                                    * psi[int(t), j, k]
                                     * I_sym[j, l]
-                                    + beta_sev[int(t - 1), j, l, k]
-                                    * psi[int(t - 1), j, l]
-                                    * psi[int(t - 1), j, k]
+                                    + beta_sev[int(t), j, l, k]
+                                    * psi[int(t), j, l]
+                                    * psi[int(t), j, k]
                                     * I_sev[j, l]
                                     for l in range(self.K)
                                 ]
@@ -323,7 +323,7 @@ class Simulator:
         # method _build_dE_trdt is only called if E2 is in simulation_type so this has to be executed anways
         epsilon = self.params["epsilon"]
         Etr = self.params["E_tr"]
-        res.append(-1 * epsilon[int(t - 1)] * Etr)
+        res.append(-1 * epsilon[int(t)] * Etr)
 
         return np.array(res).sum(axis=0)
 
@@ -372,20 +372,20 @@ class Simulator:
         if "E2" in cls:
             epsilon = self.params["epsilon"]
             Ent = self.params["E_nt"]
-            res.append(epsilon[int(t - 1)] * Ent)
+            res.append(epsilon[int(t)] * Ent)
         if "I3" in cls:
             gamma_asym = self.params["gamma_asym"]
-            my_sym = self.params["my_sym"]
-            my_sev = self.params["my_sev"]
+            mu_sym = self.params["mu_sym"]
+            mu_sev = self.params["mu_sev"]
             tau_asym = self.params["tau_asym"]
             I_asym = self.params["I_asym"]
             res.append(
                 -1
                 * (
-                    gamma_asym[int(t - 1)] * I_asym
-                    + my_sym[int(t - 1)] * I_asym
-                    + my_sev[int(t - 1)] * I_asym
-                    + tau_asym[int(t - 1)] * I_asym
+                    gamma_asym[int(t)] * I_asym
+                    + mu_sym[int(t)] * I_asym
+                    + mu_sev[int(t)] * I_asym
+                    + tau_asym[int(t)] * I_asym
                 )
             )
         elif "I2" in cls:
@@ -410,20 +410,20 @@ class Simulator:
         res = []
         cls = self.simulation_type.split()
         if "I3" in cls:
-            my_sym = self.params["my_sym"]
-            my_sev = self.params["my_sev"]
+            mu_sym = self.params["mu_sym"]
+            mu_sev = self.params["mu_sev"]
             gamma_sym = self.params["gamma_sym"]
             tau_sym = self.params["tau_sym"]
             I_asym = self.params["I_asym"]
             I_sym = self.params["I_sym"]
             I_sev = self.params["I_sev"]
             res.append(
-                my_sym[int(t - 1)] * I_asym
-                + my_sym[int(t - 1)] * I_sev
+                mu_sym[int(t)] * I_asym
+                + mu_sym[int(t)] * I_sev
                 - (
-                    gamma_sym[int(t - 1)] * I_sym
-                    + my_sev[int(t - 1)] * I_sym
-                    + tau_sym[int(t - 1)] * I_sym
+                    gamma_sym[int(t)] * I_sym
+                    + mu_sev[int(t)] * I_sym
+                    + tau_sym[int(t)] * I_sym
                 )
             )
         elif "I2" in cls:
@@ -447,18 +447,18 @@ class Simulator:
         """
         res = []
         # I3 doesn't have to be checked because I_sev is only called if I3 and Q3 are in simulation_type
-        my_sev = self.params["my_sev"]
+        mu_sev = self.params["mu_sev"]
         gamma_sev_r = self.params["gamma_sev_r"]
         gamma_sev_d = self.params["gamma_sev_d"]
-        my_sym = self.params["my_sym"]
+        mu_sym = self.params["mu_sym"]
         tau_sev = self.params["tau_sev"]
         I_asym = self.params["I_asym"]
         I_sym = self.params["I_sym"]
         I_sev = self.params["I_sev"]
         Q_sev = self.params["Q_sev"]
         res.append(
-            my_sev[int(t - 1)] * I_asym
-            + my_sev[int(t - 1)] * I_sym
+            mu_sev[int(t)] * I_asym
+            + mu_sev[int(t)] * I_sym
             - 1
             * (
                 [
@@ -466,9 +466,9 @@ class Simulator:
                         [
                             (
                                 (1 - self._calc_sigma(t, j, k, I_sev[j, k], Q_sev[j, k]))
-                                * gamma_sev_r[int(t - 1), j, k]
+                                * gamma_sev_r[int(t), j, k]
                                 + self._calc_sigma(t, j, k, I_sev[j, k], Q_sev[j, k])
-                                * gamma_sev_d[int(t - 1), j, k]
+                                * gamma_sev_d[int(t), j, k]
                             )
                             * I_sev[j, k]
                             for k in range(self.K)
@@ -476,8 +476,8 @@ class Simulator:
                     )
                     for j in range(self.J)
                 ]
-                + my_sym[int(t - 1)] * I_sev
-                + tau_sev[int(t - 1)] * I_sev
+                + mu_sym[int(t)] * I_sev
+                + tau_sev[int(t)] * I_sev
             )
         )
 
@@ -528,25 +528,25 @@ class Simulator:
         if "E2" in cls:
             epsilon = self.params["epsilon"]
             Etr = self.params["E_tr"]
-            res.append(epsilon[int(t - 1)] * Etr)
+            res.append(epsilon[int(t)] * Etr)
         if "I3" in cls:
             tau_asym = self.params["tau_asym"]
             I_asym = self.params["I_asym"]
-            res.append(tau_asym[int(t - 1)] * I_asym)
+            res.append(tau_asym[int(t)] * I_asym)
         elif "I2" in cls:
             pass
 
         if "Q3" in cls:
             gamma_asym = self.params["gamma_asym"]
-            my_sym = self.params["my_sym"]
-            my_sev = self.params["my_sev"]
+            mu_sym = self.params["mu_sym"]
+            mu_sev = self.params["mu_sev"]
             Q_asym = self.params["Q_asym"]
             res.append(
                 -1
                 * (
-                    gamma_asym[int(t - 1)] * Q_asym
-                    + my_sym[int(t - 1)] * Q_asym
-                    + my_sev[int(t - 1)] * Q_asym
+                    gamma_asym[int(t)] * Q_asym
+                    + mu_sym[int(t)] * Q_asym
+                    + mu_sev[int(t)] * Q_asym
                 )
             )
         elif "Q2" in cls:
@@ -573,21 +573,21 @@ class Simulator:
         if "I3" in cls:
             tau_sym = self.params["tau_sym"]
             I_sym = self.params["I_sym"]
-            res.append(tau_sym[int(t - 1)] * I_sym)
+            res.append(tau_sym[int(t)] * I_sym)
         elif "I2" in cls:
             pass
 
         if "Q3" in cls:
-            my_sym = self.params["my_sym"]
+            mu_sym = self.params["mu_sym"]
             gamma_sym = self.params["gamma_sym"]
-            my_sev = self.params["my_sev"]
+            mu_sev = self.params["mu_sev"]
             Q_asym = self.params["Q_asym"]
             Q_sev = self.params["Q_sev"]
             Q_sym = self.params["Q_sym"]
             res.append(
-                my_sym[int(t - 1)] * Q_asym
-                + my_sym[int(t - 1)] * Q_sev
-                - (gamma_sym[int(t - 1)] * Q_sym + my_sev[int(t - 1)] * Q_sym)
+                mu_sym[int(t)] * Q_asym
+                + mu_sym[int(t)] * Q_sev
+                - (gamma_sym[int(t)] * Q_sym + mu_sev[int(t)] * Q_sym)
             )
         elif "Q2" in cls:
             pass
@@ -612,10 +612,10 @@ class Simulator:
         # Q3 doesn't have to be checked because Q_sev is only called if I3 and Q3 are in simulation_type
         tau_sev = self.params["tau_sev"]
         I_sev = self.params["I_sev"]
-        res.append(tau_sev[int(t - 1)] * I_sev)
+        res.append(tau_sev[int(t)] * I_sev)
 
-        my_sev = self.params["my_sev"]
-        my_sym = self.params["my_sym"]
+        mu_sev = self.params["mu_sev"]
+        mu_sym = self.params["mu_sym"]
         gamma_sev_r = self.params["gamma_sev_r"]
         gamma_sev_d = self.params["gamma_sev_d"]
         Q_asym = self.params["Q_asym"]
@@ -623,8 +623,8 @@ class Simulator:
         Q_sev = self.params["Q_sev"]
         I_sev = self.params["I_sev"]
         res.append(
-            my_sev[int(t - 1)] * Q_asym
-            + my_sev[int(t - 1)] * Q_sym
+            mu_sev[int(t)] * Q_asym
+            + mu_sev[int(t)] * Q_sym
             - 1
             * (
                 [
@@ -632,9 +632,9 @@ class Simulator:
                         [
                             (
                                 (1 - self._calc_sigma(t, j, k, I_sev[j, k], Q_sev[j, k]))
-                                * gamma_sev_r[int(t - 1), j, k]
+                                * gamma_sev_r[int(t), j, k]
                                 + self._calc_sigma(t, j, k, I_sev[j, k], Q_sev[j, k])
-                                * gamma_sev_d[int(t - 1), j, k]
+                                * gamma_sev_d[int(t), j, k]
                             )
                             * Q_sev[j, k]
                             for k in range(self.K)
@@ -642,7 +642,7 @@ class Simulator:
                     )
                     for j in range(self.J)
                 ]
-                + my_sym[int(t - 1)] * Q_sev
+                + mu_sym[int(t)] * Q_sev
             )
         )
 
@@ -673,8 +673,8 @@ class Simulator:
             I_sev = self.params["I_sev"]
             Q_sev = self.params["Q_sev"]
             res.append(
-                gamma_asym[int(t - 1)] * I_asym
-                + gamma_sym[int(t - 1)] * I_sym
+                gamma_asym[int(t)] * I_asym
+                + gamma_sym[int(t)] * I_sym
                 + (
                     [
                         np.array(
@@ -686,7 +686,7 @@ class Simulator:
                         for j in range(self.J)
                     ]
                 )
-                * gamma_sev_r[int(t - 1)]
+                * gamma_sev_r[int(t)]
                 * I_sev
             )
         elif "I2" in cls:
@@ -703,8 +703,8 @@ class Simulator:
             Q_sev = self.params["Q_sev"]
             I_sev = self.params["I_sev"]
             res.append(
-                gamma_asym[int(t - 1)] * Q_asym
-                + gamma_sym[int(t - 1)] * Q_sym
+                gamma_asym[int(t)] * Q_asym
+                + gamma_sym[int(t)] * Q_sym
                 + (
                     [
                         np.array(
@@ -716,7 +716,7 @@ class Simulator:
                         for j in range(self.J)
                     ]
                 )
-                * gamma_sev_r[int(t - 1)]
+                * gamma_sev_r[int(t)]
                 * Q_sev
             )
         elif "Q2" in cls:
@@ -727,7 +727,7 @@ class Simulator:
         # method _build_dR_dt is only called if R is in simulation_type so this has to be executed anways
         rho_rec = self.params["rho_rec"]
         R = self.params["R"]
-        res.append(-1 * rho_rec[int(t - 1)] * R)
+        res.append(-1 * rho_rec[int(t)] * R)
 
         return np.array(res).sum(axis=0)
 
@@ -756,7 +756,7 @@ class Simulator:
                     np.array(
                         [
                             self._calc_sigma(t, j, k, I_sev[j, k], Q_sev[j, k])
-                            * gamma_sev_d[int(t - 1), j, k]
+                            * gamma_sev_d[int(t), j, k]
                             * I_sev[j, k]
                             for k in range(self.K)
                         ]
@@ -778,7 +778,7 @@ class Simulator:
                     np.array(
                         [
                             self._calc_sigma(t, j, k, I_sev[j, k], Q_sev[j, k])
-                            * gamma_sev_d[int(t - 1), j, k]
+                            * gamma_sev_d[int(t), j, k]
                             * Q_sev[j, k]
                             for k in range(self.K)
                         ]
@@ -922,17 +922,17 @@ class Simulator:
         np.float64
             calculated value of sigma for current iteration
         """
-        N_total = self.params["N_total"]
         N = self.params["N"]
-        B = self.params["B"]
+        N_total = np.sum(N, axis=1)
+        Beds = self.params["Beds"]
         sigma = self.params["sigma"]
-        if (I_sev_jk + Q_sev_jk) * N[j, k] <= (N[j, k] / N_total[j]) * B[j]:
-            return sigma[int(t - 1), j, k]
+        if (I_sev_jk + Q_sev_jk) * N[j, k] <= (N[j, k] / N_total[j]) * Beds[j]:
+            return sigma[int(t), j, k]
         else:
             return (
-                sigma[int(t - 1), j, k] * (N[j, k] / N_total[j]) * B[j]
+                sigma[int(t), j, k] * (N[j, k] / N_total[j]) * Beds[j]
                 + (I_sev_jk + Q_sev_jk) * N[j, k]
-                - (N[j, k] / N_total[j]) * B[j]
+                - (N[j, k] / N_total[j]) * Beds[j]
             ) / ((I_sev_jk + Q_sev_jk) * N[j, k])
 
     def _simulate_RK45(self, t, params) -> np.ndarray:
@@ -1038,6 +1038,18 @@ class Simulator:
         np.ndarray
             solution of ODE system solved with scipy.solve_ivp
         """
+        # TODO find better way
+        for key in params:
+            if params[key] != None:
+                if key in [ "beta_asym", "beta_sym", "beta_sev"]:
+                    self.params[key] = np.ones((int(t[-1]) + 1, self.J, self.K, self.K)) * np.array(params[key])
+                elif key in ["M", "V", "R", "S", "E", "E_tr", "E_nt",
+                             "I", "I_asym", "I_sym", "I_sev", "Q", "Q_asym", "Q_sym", "Q_sev",
+                             "D", "N"]:
+                    self.params[key] = np.ones((self.J, self.K)) * np.array(params[key])
+                elif key not in ["Beds"]:
+                    self.params[key] = np.ones((int(t[-1]) + 1, self.J, self.K)) * np.array(params[key])
+
         sol = solve_ivp(
             fun=self._build_ode_system,
             t_span=[t[0], t[-1]],
