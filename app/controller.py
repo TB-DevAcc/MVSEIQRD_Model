@@ -332,7 +332,7 @@ class Controller:
         #         "Epidemiological classes do not add up to one." "Check input parameters."
         #     )
 
-    def initialize_parameters(self, params: dict = None) -> dict:
+    def initialize_parameters(self, params: dict = None, load_base_data: bool = False) -> dict:
         """
         Initializes all parameters either by default or by setting it with supplied params dict
         """
@@ -350,9 +350,11 @@ class Controller:
             base_data = self.data_handler.get_base_values()
             if len(base_data) > 0:
                 self._params["N"], self._params["Beds"] = [], []
-                for key, value in base_data.items():
+                map_params = {}
+                for i, (key, value) in enumerate(base_data.items()):
                     self._params["N"].append(value["N"])
                     self._params["Beds"].append(value["B"])
+                    map_params[f"{i}"] = key
 
         # make sure types are clear first under valid_domain and then initialize within bounds
         self.check_params(self._params)
