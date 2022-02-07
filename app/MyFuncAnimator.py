@@ -1,6 +1,6 @@
 #import matplotlib.colors as colors
 from tqdm.notebook import *
-from app.Covid_Data_Handler import Covid_Data_Handler
+from app.data_handler import DataHandler
 import numpy as np
 import geopandas as gpd
 import pandas as pd
@@ -20,14 +20,14 @@ class MyFuncAnimator:
     """
     
     def __init__(self, df, rs, date_lst, fall="AnzahlFall"):
-        self.cdh = Covid_Data_Handler()
+        self.dh = DataHandler()
         self.fig, self.ax = plt.subplots()
         self.length = len(date_lst)
         self.df = df
         self.rs = rs
         self.date_lst = date_lst
         self.pbar = tqdm(total=len(date_lst) + 1)
-        self.maxNum = self.cdh.maxNum(df, date_lst, fall)
+        self.maxNum = self.dh.get_highest_infection(date_lst, fall, df)
         self.fall = fall
         self.is_germany = self.is_germany(df)
         self.top_cities = {
@@ -77,7 +77,7 @@ class MyFuncAnimator:
     """
 
     def next_values(self, df, rs, date):
-        new_df = self.cdh.values_today_germany(df, date)
+        new_df = self.dh.get_values_of_day(date, df)
         new_df = new_df.groupby(by="RS").sum().groupby(level=[0]).cumsum()
 
         new_df = pd.merge(
