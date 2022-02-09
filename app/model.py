@@ -28,17 +28,6 @@ class Model:
         self.simulator = Simulator()
         self.view = View()
 
-        # TODO load data from DataHandler and put them into params
-        # self.data_handler = DataHandler()
-        # base_data = self.data_handler.get_base_values()
-        # if len(base_data) > 0:
-        #     params = {"N": [], "Beds": []}
-        #     for key, value in self.data_handler.get_base_values().items():
-        #         params["N"].append(value["N"])
-        #         params["Beds"].append(value["B"])
-        #
-        # self.controller.set_params(params, False)
-
         self._update_params(params, fill_missing_values, reset=True)
 
     def _update_view(self, params) -> None:

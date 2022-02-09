@@ -1,6 +1,9 @@
+from typing import Tuple
+
 import pandas as pd
 import numpy as np
-import geopands as gpd
+import geopandas as gpd
+from .model import Model
 
 
 class DataHandler:
@@ -139,7 +142,6 @@ class DataHandler:
                 "55 bis unter 60 Jahre",
             ]
         ].sum(axis=1)
-        # TODO get a solution to divide the 75+ group from original data
         age_groups["60 bis 79 Jahre"] = (
             age_groups[["60 bis unter 65 Jahre", "65 bis unter 75 Jahre"]].sum(axis=1)
             + 0.047 * age_groups["Insgesamt"]
@@ -339,6 +341,56 @@ class DataHandler:
         ].abs()
 
         return c_plt_df
+
+    def prepare_simulated_covid_data(self, covid_data: dict, mode: str = "I") -> Tuple:
+        """
+        Prepares a dataframe to use in MyFuncAnimator from simulation results
+
+        Parameters
+        ----------
+        covid_data : dict
+            simulation results
+        mode : str
+            Mode which class should be viewed - I, E or V
+
+        Returns
+        -------
+        Tuple
+            Dataframe with prepared data, geo data and dates of dataframe
+
+        """
+        sim_type = Model().detect_simulation_type(covid_data)
+        select_classes = []
+        if mode == "I":
+            if "I3" in sim_type:
+                select_classes = ['I_asym', 'I_sym', 'I_sev']
+            elif "I" in sim_type:
+                select_classes = ['I']
+        elif mode == "E":
+            if "E2" in sim_type:
+                select_classes = ['E_tr', 'E_nt']
+            if "E" in sim_type:
+                select_classes = ['E']
+        elif mode == "V" and "V" in sim_type:
+            select_classes = ['V']
+
+        data = np.sum([covid_data[classes] for classes in select_classes], axis=(0))
+        data_frame = pd.DataFrame(np.sum(data, axis=(2)))
+
+        # TODO: Index von dict muss int sein, kein str
+        map_params = {0: '01001', 1: '01002'} # Zuordnung zu Landkreisen, wird im Controller erstellt zu Beginn
+        data_frame.rename(columns=map_params, inplace=True)
+        data_frame = data_frame.assign(Meldedatum=pd.date_range('2021-01-01', period=365))
+        data_frame = pd.melt(data_frame, id_vars=['Meldedatum'], value_vars=map_params.values())
+        data_frame.rename(columns={'variable': 'RS', 'value': 'AnzahlFall'}, inplace=True)
+        data_frame['Meldedatum'] = data_frame['Meldedatum'].astype('datetime64')
+        data_frame = data_frame.assign(Bundesland='')
+        dates = data_frame[data_frame['RS'] == '01001']['Meldedatum']
+
+        geo = self.get_district_geometries()
+        geo = pd.concat([geo[geo['RS'] == district] for district in map_params.values()])
+
+        return data_frame, geo, dates
 
     def _add_seven_day_average(
         self, covid_data: pd.DataFrame, column_name: str
