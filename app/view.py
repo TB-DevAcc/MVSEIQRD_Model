@@ -1,3 +1,4 @@
+import base64
 import time
 from pathlib import Path
 
@@ -28,7 +29,8 @@ class View:
         self.real_params = real_params
         self.sim_params = sim_params
         self.t = t
-        self.network_svg_path = str(self._create_network_svg())
+        self.network_svg_path = str(self._create_network_svg(return_b64=False))
+        self.network_svg_b64 = self._create_network_svg(return_b64=True)
         self.network_iframe_path = str(self._create_network_iframe())
         self.app = self._build_app()
 
@@ -238,14 +240,20 @@ class View:
         return network_iframe_path
 
     def _create_network_svg(
-        self, network_svg_path=Path("assets/network.svg"), dot_path=Path("data/param_graph.dot")
+        self,
+        network_svg_path=Path("assets/network.svg"),
+        dot_path=Path("data/param_graph.dot"),
+        return_b64=False,
     ) -> str:
         graphs = pydot.graph_from_dot_file(dot_path)
         graph = graphs[0]
         graph.set_bgcolor("transparent")
         graph.set_size(8)
         graph.write_svg(network_svg_path)
-        return network_svg_path
+        if return_b64:
+            return base64.b64encode(graph.create_svg())
+        else:
+            return network_svg_path
 
     def _build_app(self):
         """
@@ -383,7 +391,7 @@ class View:
                         dcc.Loading(
                             children=[
                                 html.Img(
-                                    src=self.network_svg_path,
+                                    src=self.network_svg_b64,
                                     id="network-output",
                                     className="mx-auto mb-1 mt-5 pt-5",
                                     style={
