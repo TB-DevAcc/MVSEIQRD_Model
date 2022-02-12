@@ -1,5 +1,7 @@
 import json
+
 import numpy as np
+
 from .data_handler import DataHandler
 
 
@@ -74,6 +76,7 @@ class Controller:
 
     def __init__(
         self,
+        model,
         default_values_path="data/default_values.json",
         default_domains_path="data/default_domains.json",
     ):
@@ -146,6 +149,7 @@ class Controller:
         J in [0, 1]                   # geographic locations
         K in [0, 1]                   # age groups
         """
+        self.model = model
         self._params = {
             "M": None,
             "V": None,
@@ -165,6 +169,8 @@ class Controller:
             "D": None,
             "N": None,
             "K": None,
+            "J": None,
+            "t": None,
             "basic_reprod_num": None,
             "Beds": None,
             "beta_asym": None,
@@ -188,12 +194,102 @@ class Controller:
             "sigma": None,
             "tau": None,
             "psi": None,
-            "J": None,
-            "K": None,
         }
         self.default_values = self._load_json(default_values_path)
         self.default_domains = self._load_json(default_domains_path)
         self.data_handler = DataHandler()
+
+        t, J, K = self._params["t"], self._params["J"], self._params["K"]
+
+        self.PARAM_SHAPE = {
+            "M": (J, K),
+            "V": (J, K),
+            "R": (J, K),
+            "S": (J, K),
+            "E": (J, K),
+            "E_tr": (J, K),
+            "E_nt": (J, K),
+            "I": (J, K),
+            "I_asym": (J, K),
+            "I_sym": (J, K),
+            "I_sev": (J, K),
+            "Q": (J, K),
+            "Q_asym": (J, K),
+            "Q_sym": (J, K),
+            "Q_sev": (J, K),
+            "D": (J, K),
+            "N": (J, K),
+            "K": (J, K),
+            "basic_reprod_num": (t, J, K),
+            "Beds": (1,),
+            "beta_asym": (t, J, K, K),
+            "beta_sym": (t, J, K, K),
+            "beta_sev": (t, J, K, K),
+            "gamma_asym": (t, J, K),
+            "gamma_sym": (t, J, K),
+            "gamma_sev": (t, J, K),
+            "gamma_sev_r": (t, J, K),
+            "gamma_sev_d": (t, J, K),
+            "epsilon": (t, J, K),
+            "mu": (t, J, K),
+            "mu_asym": (t, J, K),
+            "mu_sym": (t, J, K),
+            "mu_sev": (t, J, K),
+            "nu": (t, J, K),
+            "rho": (t, J, K),
+            "rho_mat": (t, J, K),
+            "rho_vac": (t, J, K),
+            "rho_rec": (t, J, K),
+            "sigma": (t, J, K),
+            "tau": (t, J, K),
+            "psi": (t, J, K),
+            "J": (t, J, K),
+            "K": (t, J, K),
+        }
+
+        # Data for direct use for the simulator (with usually solve_ivp)
+        self.sim_data = None  # set in initialize_parameters() or manually with _create_sim_data()
+
+    def _create_sim_data(self, params: dict = None) -> np.ndarray:
+        """
+        Creates data for the simulator with correct shape.
+        Includes only class parameter. (Hyper)parameter are still readable from self._params
+
+        Parameters
+        ----------
+        params : dict, optional
+            Simulation parameters, by default default paramteres from default_values.json
+
+        Returns
+        -------
+        np.ndarray
+            One dimensional array of shape (NumberOfClasses*J*K,)
+        """
+        if not params:
+            params = self._params
+
+        sim_type = self.model.detect_simulation_type(params)
+
+        # Epidemiological classes, e.g. 'M', 'V', 'R', ...
+        classes = self.model.translate_simulation_type(
+            sim_type, return_classes=True, return_greeks=False
+        )
+        J, K = params["J"], params["K"]
+
+        # TODO could be parallelized
+        classes_data = np.ones((len(classes) * J * K,))
+        for i in range(len(classes)):
+            classes_data[i * J * K : (i + 1) * J * K] = (
+                np.ones((J, K)) * params[classes[i]]
+            ).ravel()
+
+        # Hyperparameter, e.g. 'beta_asym', 'mu_asym', ...
+        greeks = self.model.translate_simulation_type(
+            sim_type, return_classes=False, return_greeks=True
+        )
+
+    def get_sim_data(self):
+        return self.sim_data
 
     def reset(self):
         """
@@ -359,6 +455,9 @@ class Controller:
         # make sure types are clear first under valid_domain and then initialize within bounds
         self.check_params(self._params)
 
+        # create sim_data to be used in the simulator
+        self.sim_data = self._create_sim_data()
+
         return self._params
 
     def set_params(self, params: dict) -> None:
@@ -376,6 +475,7 @@ class Controller:
         for key in params:
             self._params[key] = params[key]
         self.check_params(self._params)
+        self.sim_data = self._create_sim_data()
 
     def get_params(self, keys: list = None) -> dict:
         """
