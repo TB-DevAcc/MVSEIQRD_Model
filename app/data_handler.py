@@ -1,6 +1,6 @@
-import pandas as pd
+import geopandas as gpd
 import numpy as np
-import geopands as gpd
+import pandas as pd
 
 
 class DataHandler:
@@ -18,12 +18,8 @@ class DataHandler:
         self.default_initial_data = self._load_simulation_initial_values(
             default_age_group_data_path, default_hospital_beds_data_path
         )
-        self.recorded_cases = self._load_recorded_covid_cases(
-            default_recorded_covid_cases_path
-        )
-        self.district_geometries = self._load_district_geometries(
-            default_districts_geometry_path
-        )
+        self.recorded_cases = self._load_recorded_covid_cases(default_recorded_covid_cases_path)
+        self.district_geometries = self._load_district_geometries(default_districts_geometry_path)
 
     def _load_simulation_initial_values(
         self, age_group_data_path, hospital_beds_data_path
@@ -53,9 +49,7 @@ class DataHandler:
         )
         # Fix base data for one district manually
         base_data.loc[base_data["IdLandkreis"] == 3159, "Krankenhausbetten"] = (
-            125.8
-            / 100000
-            * base_data.loc[base_data["IdLandkreis"] == 3159, "Insgesamt"]
+            125.8 / 100000 * base_data.loc[base_data["IdLandkreis"] == 3159, "Insgesamt"]
         )
         base_data["Krankenhausbetten"] = (
             base_data["Krankenhausbetten"].round(decimals=0).astype("int32")
@@ -81,28 +75,7 @@ class DataHandler:
             age_groups_path,
             delimiter=";",
             skiprows=5,
-            usecols=[
-                1,
-                2,
-                3,
-                4,
-                5,
-                6,
-                7,
-                8,
-                9,
-                10,
-                11,
-                12,
-                13,
-                14,
-                15,
-                16,
-                17,
-                18,
-                19,
-                20,
-            ],
+            usecols=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,],
         )
         age_groups = age_groups[:-4]
         age_groups = age_groups.rename(
@@ -110,14 +83,12 @@ class DataHandler:
         )
 
         age_groups.loc[:, age_groups.columns != "Landkreis"] = (
-            age_groups.loc[:, age_groups.columns != "Landkreis"]
-            .replace("-", "0")
-            .astype("int32")
+            age_groups.loc[:, age_groups.columns != "Landkreis"].replace("-", "0").astype("int32")
         )
 
-        age_groups["0 bis 4 Jahre"] = age_groups[
-            ["unter 3 Jahre", "3 bis unter 6 Jahre"]
-        ].sum(axis=1)
+        age_groups["0 bis 4 Jahre"] = age_groups[["unter 3 Jahre", "3 bis unter 6 Jahre"]].sum(
+            axis=1
+        )
         age_groups["5 bis 14 Jahre"] = age_groups[
             ["6 bis unter 10 Jahre", "10 bis unter 15 Jahre"]
         ].sum(axis=1)
@@ -145,8 +116,7 @@ class DataHandler:
             + 0.047 * age_groups["Insgesamt"]
         )
         age_groups["80 Jahre und älter"] = (
-            age_groups[["75 Jahre und mehr"]].sum(axis=1)
-            - 0.047 * age_groups["Insgesamt"]
+            age_groups[["75 Jahre und mehr"]].sum(axis=1) - 0.047 * age_groups["Insgesamt"]
         )
 
         age_groups = age_groups.iloc[:, [0, 1, -6, -5, -4, -3, -2, -1]]
@@ -178,10 +148,7 @@ class DataHandler:
         beds = pd.read_csv(hospital_beds_path, delimiter=";", usecols=[0, 2])
 
         beds = beds.rename(
-            columns={
-                "krs1214": "IdLandkreis",
-                "krankenhausbetten2014": "Krankenhausbetten",
-            }
+            columns={"krs1214": "IdLandkreis", "krankenhausbetten2014": "Krankenhausbetten",}
         )
 
         beds["IdLandkreis"] = beds["IdLandkreis"] / 1000
@@ -203,9 +170,7 @@ class DataHandler:
             initial_values of districts for simulation
         """
         initial_values = (
-            self.default_initial_data.loc[
-                :, self.default_initial_data.columns != "Landkreis"
-            ]
+            self.default_initial_data.loc[:, self.default_initial_data.columns != "Landkreis"]
             .set_index("IdLandkreis")
             .to_dict("index")
         )
@@ -238,9 +203,7 @@ class DataHandler:
         pd.DataFrame
             A DataFrame of covid-19 from RKI-Germany
         """
-        covid_df = pd.read_csv(
-            recorded_covid_cases_path, sep=",", dtype={"IdLandkreis": str}
-        )
+        covid_df = pd.read_csv(recorded_covid_cases_path, sep=",", dtype={"IdLandkreis": str})
         covid_df = covid_df[
             [
                 "Bundesland",
@@ -334,15 +297,11 @@ class DataHandler:
 
         c_plt_df["Meldedatum"] = pd.to_datetime(c_plt_df["Meldedatum"])
         c_plt_df["NeuGenesen"] = c_plt_df["NeuGenesen"].abs()
-        c_plt_df["NeuGenesen_seven_day_average"] = c_plt_df[
-            "NeuGenesen_seven_day_average"
-        ].abs()
+        c_plt_df["NeuGenesen_seven_day_average"] = c_plt_df["NeuGenesen_seven_day_average"].abs()
 
         return c_plt_df
 
-    def _add_seven_day_average(
-        self, covid_data: pd.DataFrame, column_name: str
-    ) -> pd.DataFrame:
+    def _add_seven_day_average(self, covid_data: pd.DataFrame, column_name: str) -> pd.DataFrame:
         """
         Adds new column to given dataFrame for saving a seven day average
 
@@ -406,9 +365,7 @@ class DataHandler:
 
         return covid_data[(covid_data.Meldedatum == day)]
 
-    def get_grouped_by_age(
-        self, group_age, covid_data: pd.DataFrame = None
-    ) -> pd.DataFrame:
+    def get_grouped_by_age(self, group_age, covid_data: pd.DataFrame = None) -> pd.DataFrame:
         """
         Group by given age
 
@@ -426,9 +383,7 @@ class DataHandler:
         if covid_data is None:
             covid_data = self.recorded_cases
 
-        return covid_data[covid_data.Altersgruppe == group_age].sort_values(
-            by=["Meldedatum"]
-        )
+        return covid_data[covid_data.Altersgruppe == group_age].sort_values(by=["Meldedatum"])
 
     def get_highest_infection(
         self, date, filter_name: str, covid_data: pd.DataFrame = None
@@ -454,9 +409,7 @@ class DataHandler:
             covid_data = self.recorded_cases
 
         new_df = (
-            covid_data[covid_data.Meldedatum.isin(date)]
-            .groupby(by=["Meldedatum", "RS"])
-            .sum()
+            covid_data[covid_data.Meldedatum.isin(date)].groupby(by=["Meldedatum", "RS"]).sum()
         )
 
         # Ausreißer rausfiltern
