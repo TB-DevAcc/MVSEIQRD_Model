@@ -193,7 +193,8 @@ class Controller:
         }
         self.default_values = self._load_json(default_values_path)
         self.default_domains = self._load_json(default_domains_path)
-        self.data_handler = DataHandler()
+        self.map_params = {}
+        self.data_handler = DataHandler(self)
 
     def reset(self):
         """
@@ -350,11 +351,10 @@ class Controller:
             base_data = self.data_handler.get_simulation_initial_values()
             if len(base_data) > 0:
                 self._params["N"], self._params["Beds"] = [], []
-                map_params = {}
                 for i, (key, value) in enumerate(base_data.items()):
                     self._params["N"].append(value["N"])
                     self._params["Beds"].append(value["B"])
-                    map_params[f"{i}"] = key
+                    self.map_params[i] = key
 
         # make sure types are clear first under valid_domain and then initialize within bounds
         self.check_params(self._params)

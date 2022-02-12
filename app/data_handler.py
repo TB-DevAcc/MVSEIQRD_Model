@@ -13,11 +13,13 @@ class DataHandler:
 
     def __init__(
         self,
+        controller = None,
         default_age_group_data_path="data/simulation_test/altersgruppen.csv",
         default_hospital_beds_data_path="data/simulation_test/krankenhausbetten.csv",
         default_recorded_covid_cases_path="data/RKI_COVID19.csv",
         default_districts_geometry_path="data/RKI_Corona_Landkreise.shp",
     ):
+        self.controller = controller
         self.default_initial_data = self._load_simulation_initial_values(
             default_age_group_data_path, default_hospital_beds_data_path
         )
@@ -342,7 +344,7 @@ class DataHandler:
 
         return c_plt_df
 
-    def prepare_simulated_covid_data(self, covid_data: dict, mode: str = "I") -> Tuple:
+    def prepare_simulated_covid_data(self, model, covid_data: dict, mode: str = "I") -> Tuple:
         """
         Prepares a dataframe to use in MyFuncAnimator from simulation results
 
@@ -359,7 +361,8 @@ class DataHandler:
             Dataframe with prepared data, geo data and dates of dataframe
 
         """
-        sim_type = Model().detect_simulation_type(covid_data)
+        # TODO
+        sim_type = "M V S E2 I3 Q3 R D"# model.detect_simulation_type(covid_data)
         select_classes = []
         if mode == "I":
             if "I3" in sim_type:
@@ -378,12 +381,12 @@ class DataHandler:
         data_frame = pd.DataFrame(np.sum(data, axis=(2)))
 
         # TODO: Index von dict muss int sein, kein str
-        map_params = {0: '01001', 1: '01002'} # Zuordnung zu Landkreisen, wird im Controller erstellt zu Beginn
+        map_params = {0: '01001'}#, 1: '01002'} # self.controller.map_params
         data_frame.rename(columns=map_params, inplace=True)
-        data_frame = data_frame.assign(Meldedatum=pd.date_range('2021-01-01', period=365))
+        data_frame = data_frame.assign(Meldedatum=pd.date_range('2021-01-01', periods=365))
         data_frame = pd.melt(data_frame, id_vars=['Meldedatum'], value_vars=map_params.values())
         data_frame.rename(columns={'variable': 'RS', 'value': 'AnzahlFall'}, inplace=True)
-        data_frame['Meldedatum'] = data_frame['Meldedatum'].astype('datetime64')
+        data_frame['Meldedatum'] = data_frame['Meldedatum'].astype('str')
         data_frame = data_frame.assign(Bundesland='')
         dates = data_frame[data_frame['RS'] == '01001']['Meldedatum']
 
