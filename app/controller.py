@@ -250,11 +250,61 @@ class Controller:
             "psi": (t, J, K),
         }
 
+        self.key_list = [
+            "M",
+            "V",
+            "R",
+            "S",
+            "E",
+            "E_tr",
+            "E_nt",
+            "I",
+            "I_asym",
+            "I_sym",
+            "I_sev",
+            "Q",
+            "Q_asym",
+            "Q_sym",
+            "Q_sev",
+            "D",
+            "N",
+            "K",
+            "J",
+            "t",
+            "basic_reprod_num",
+            "Beds",
+            "beta_asym",
+            "beta_sym",
+            "beta_sev",
+            "gamma_asym",
+            "gamma_sym",
+            "gamma_sev",
+            "gamma_sev_r",
+            "gamma_sev_d",
+            "epsilon",
+            "mu_sym",
+            "mu_sev",
+            "nu",
+            "rho_mat",
+            "rho_vac",
+            "rho_rec",
+            "sigma",
+            "tau_asym",
+            "tau_sym",
+            "tau_sev",
+            "psi",
+        ]
+
         # Set with update_shape_data()
+        self.classes_keys = None
         self.classes_data = None  # [(J, K)]
+        self.greeks_keys = None
         self.greeks_data = None  # [(t, J, K)]
+        self.special_greeks_keys = None
         self.special_greeks_data = None  # [(t, J, K, K)]
+        self.hyper_keys = None
         self.hyper_data = None  # [(0,)]
+        self.misc_keys = None
         self.misc_data = None  # [(1,)]
         self.update_shape_data(t, J, K)
 
@@ -338,6 +388,19 @@ class Controller:
             keys_with_shape = [
                 k for k in params if params_shapes[k] == shape and k not in none_keys
             ]
+
+            # Save key lists to check order later if necessary
+            t, J, K = params["t"], params["J"], params["K"]
+            if shape == (J, K):
+                self.classes_keys = keys_with_shape
+            elif shape == (t, J, K):
+                self.greeks_keys = keys_with_shape
+            elif shape == (t, J, K, K):
+                self.special_greeks_keys = keys_with_shape
+            elif shape == (0,):
+                self.hyper_keys = keys_with_shape
+            elif shape == (1,):
+                self.misc_keys = keys_with_shape
 
             # final shape of the output array, that can be
             # reshaped into (len(keys_with_shape), shape[0], shape[1], ...)
