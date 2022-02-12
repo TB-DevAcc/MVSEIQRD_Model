@@ -26,7 +26,7 @@ class Model:
         )
         self.get_params = self.controller.get_params
         self.simulator = Simulator()
-        self.view = View()
+        self.view = View(self)
 
         # TODO load data from DataHandler and put them into params
         # self.data_handler = DataHandler()
