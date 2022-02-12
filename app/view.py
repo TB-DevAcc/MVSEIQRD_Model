@@ -22,7 +22,7 @@ class View:
             "data:image/svg+xml;base64," + str(self._create_network_svg(return_b64=True))[2:-1]
         )
         self.network_iframe_path = str(self._create_network_iframe())
-        self.app = self._build_app()
+        # self.app = self._build_app()
 
     def plot(self, params=None, layout_dict: dict = None, show: bool = False):
         """

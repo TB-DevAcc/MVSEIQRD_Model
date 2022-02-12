@@ -24,7 +24,9 @@ class Model:
          default_domains_path
         """
         self.controller = Controller(
-            default_values_path=default_values_path, default_domains_path=default_domains_path
+            model=self,
+            default_values_path=default_values_path,
+            default_domains_path=default_domains_path,
         )
         self.get_params = self.controller.get_params
         self.simulator = Simulator()
@@ -148,11 +150,16 @@ class Model:
     def get_simulation_type(self) -> str:
         return self.simulator.simulation_type
 
-    def translate_simulation_type(self, simulation_type: str = None) -> list:
+    def translate_simulation_type(
+        self, simulation_type: str = None, return_classes: bool = True, return_greeks: bool = False
+    ) -> list:
         """
         Translates simulation type from detect_simulation_type into a list of 
         identifiers for epidemiological classes used in params. 
         Important for classes such as I3, so convert into I_asym, I_sym, I_sev.
+
+        If return_classes is set to False, no classes will be returned.
+        If return_greeks is set to True, hyperparameter will be returned.
 
         Parameters
         ----------
@@ -170,12 +177,14 @@ class Model:
         >>> translate_simulation_type("E2")
         >>> ['E_nt', 'E_tr']
         """
+        params = self.get_params()
+
         # No simulation type supplied
         if not simulation_type:
             simulation_type = self.get_simulation_type()
             # If simulation has not been run before
             if not simulation_type:
-                simulation_type = self.detect_simulation_type(self.get_params()).split()
+                simulation_type = self.detect_simulation_type(params).split()
             else:
                 simulation_type = simulation_type.split()
         classes = []
@@ -213,7 +222,45 @@ class Model:
                 classes.append("R")
             elif letter == "D":
                 classes.append("D")
-        return classes
+
+        if return_classes and not return_greeks:
+            return classes
+
+        greeks = [
+            "beta_asym",
+            "beta_sym",
+            "beta_sev",
+            "gamma_asym",
+            "gamma_sym",
+            "gamma_sev",
+            "gamma_sev_r",
+            "gamma_sev_d",
+            "epsilon",
+            "mu_sym",
+            "mu_sev",
+            "nu",
+            "rho_mat",
+            "rho_vac",
+            "rho_rec",
+            "sigma",
+            "tau_asym",
+            "tau_sym",
+            "tau_sev",
+            "psi",
+        ]
+        # Not None greeks
+        greeks = [
+            key
+            for key in params.keys()
+            if isinstance(params[key], np.ndarray)
+            or isinstance(params[key], list)
+            and key in greeks
+        ]
+
+        if return_classes and return_greeks:
+            return classes + greeks
+        elif return_greeks:
+            return greeks
 
     def reset_parameters(self):
         """
