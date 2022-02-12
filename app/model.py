@@ -1,3 +1,5 @@
+import numpy as np
+
 from .controller import Controller
 from .simulator import Simulator
 from .view import View
@@ -78,7 +80,11 @@ class Model:
             simulation_type (e.g. "S I", "S E I R", "M V S E2 I3 Q3 R D")
         """
         # Not None keys
-        keys = [key for key in params.keys() if params[key]]
+        keys = [
+            key
+            for key in params.keys()
+            if isinstance(params[key], np.ndarray) or isinstance(params[key], list)
+        ]
 
         sim_type = ""
 
@@ -135,7 +141,7 @@ class Model:
             return sim_type
         else:
             raise ValueError(
-                f"Simulation type {sim_type} not supported."
+                f"Simulation type {sim_type} not supported. "
                 "For supported simulation types see Controller.supported_sim_types."
             )
 
@@ -169,7 +175,9 @@ class Model:
             simulation_type = self.get_simulation_type()
             # If simulation has not been run before
             if not simulation_type:
-                simulation_type = self.detect_simulation_type().split()
+                simulation_type = self.detect_simulation_type(self.get_params()).split()
+            else:
+                simulation_type = simulation_type.split()
         classes = []
         for letter in simulation_type:
             if letter == "M":
