@@ -1,4 +1,5 @@
 import json
+from functools import reduce
 
 import numpy as np
 
@@ -77,6 +78,8 @@ class Controller:
     def __init__(
         self,
         model,
+        params: dict = None,
+        fill_missing_values: bool = True,
         default_values_path="data/default_values.json",
         default_domains_path="data/default_domains.json",
     ):
@@ -182,22 +185,23 @@ class Controller:
             "gamma_sev_r": None,
             "gamma_sev_d": None,
             "epsilon": None,
-            "mu": None,
-            "mu_asym": None,
             "mu_sym": None,
             "mu_sev": None,
             "nu": None,
-            "rho": None,
             "rho_mat": None,
             "rho_vac": None,
             "rho_rec": None,
             "sigma": None,
-            "tau": None,
+            "tau_asym": None,
+            "tau_sym": None,
+            "tau_sev": None,
             "psi": None,
         }
         self.default_values = self._load_json(default_values_path)
         self.default_domains = self._load_json(default_domains_path)
         self.data_handler = DataHandler()
+
+        self.update_params(params, fill_missing_values, reset=True)
 
         t, J, K = self._params["t"], self._params["J"], self._params["K"]
 
@@ -219,7 +223,9 @@ class Controller:
             "Q_sev": (J, K),
             "D": (J, K),
             "N": (J, K),
-            "K": (J, K),
+            "K": (0,),
+            "J": (0,),
+            "t": (0,),
             "basic_reprod_num": (t, J, K),
             "Beds": (1,),
             "beta_asym": (t, J, K, K),
@@ -231,65 +237,122 @@ class Controller:
             "gamma_sev_r": (t, J, K),
             "gamma_sev_d": (t, J, K),
             "epsilon": (t, J, K),
-            "mu": (t, J, K),
-            "mu_asym": (t, J, K),
             "mu_sym": (t, J, K),
             "mu_sev": (t, J, K),
             "nu": (t, J, K),
-            "rho": (t, J, K),
             "rho_mat": (t, J, K),
             "rho_vac": (t, J, K),
             "rho_rec": (t, J, K),
             "sigma": (t, J, K),
-            "tau": (t, J, K),
+            "tau_asym": (t, J, K),
+            "tau_sym": (t, J, K),
+            "tau_sev": (t, J, K),
             "psi": (t, J, K),
-            "J": (t, J, K),
-            "K": (t, J, K),
         }
+
+        # Set with update_shape_data()
+        self.classes_data = None  # [(J, K)]
+        self.greeks_data = None  # [(t, J, K)]
+        self.special_greeks_data = None  # [(t, J, K, K)]
+        self.hyper_data = None  # [(0,)]
+        self.misc_data = None  # [(1,)]
+        self.update_shape_data(t, J, K)
 
         # Data for direct use for the simulator (with usually solve_ivp)
         self.sim_data = None  # set in initialize_parameters() or manually with _create_sim_data()
 
-    def _create_sim_data(self, params: dict = None) -> np.ndarray:
+    def update(self, params, fill_missing_values, reset=False) -> None:
         """
-        Creates data for the simulator with correct shape.
-        Includes only class parameter. (Hyper)parameter are still readable from self._params
+        Updates the controller to the latest parameters. 
+        Wrapper around update_params and update_shape_data.
+        """
+        self.update_params(params, fill_missing_values, reset=reset)
+        t, J, K = self._params["t"], self._params["J"], self._params["K"]
+        self.update_shape_data(t, J, K)
+
+    def update_params(self, params, fill_missing_values, reset=False) -> None:
+        """
+        Updates the controller if new data/parameters is/are available. 
+        Sets self._params to current parameter dict.
+        """
+        if reset:
+            self.reset()
+
+        if fill_missing_values:
+            # build complete parameter set with controller
+            # add default values to given params dict
+            self.initialize_parameters(params)
+        else:
+            # add given params to already existing parameter dict
+            self.check_params(params)
+            self.set_params(params)
+
+    def update_shape_data(self, t, J, K):
+        shape_data_dict = self.broadcast_params_into_shape()
+        # shapes taken from PARAM_SHAPE
+        self.classes_data = shape_data_dict[(J, K)]
+        self.greeks_data = shape_data_dict[(t, J, K)]
+        self.special_greeks_data = shape_data_dict[(t, J, K, K)]
+        self.hyper_data = shape_data_dict[(0,)]
+        self.misc_data = shape_data_dict[(1,)]
+
+    def broadcast_params_into_shape(self, params: dict = None, params_shapes: dict = None) -> dict:
+        """
+        Creates a 1D np.array for every unique shape in params_shapes. 
+        E.g. all params with shape (J, K) are converted to an array with 
+        shape (NumberOfClasses*J*K,). Can be reshaped back into an array with the first dimension
+        being the parameter using np.reshape(X, NumberOfClasses, J, K).
+
+        The order of the parameters in the output one dimensional array is based on the order
+        they are in in params
 
         Parameters
         ----------
         params : dict, optional
-            Simulation parameters, by default default paramteres from default_values.json
+            [description], by default None
+        params_shapes : dict, optional
+            [description], by default None
 
         Returns
         -------
-        np.ndarray
-            One dimensional array of shape (NumberOfClasses*J*K,)
+        dict
+            Dictionary with key being the shape and value being the
+            one dimensional array of shape (NumberOfClasses*J*K,)
         """
         if not params:
             params = self._params
+        if not params_shapes:
+            params_shapes = self.PARAM_SHAPE
 
-        sim_type = self.model.detect_simulation_type(params)
+        # Parameters set to None
+        none_keys = [
+            key
+            for key in params.keys()
+            if not (isinstance(params[key], np.ndarray) or params[key])
+        ]
 
-        # Epidemiological classes, e.g. 'M', 'V', 'R', ...
-        classes = self.model.translate_simulation_type(
-            sim_type, return_classes=True, return_greeks=False
-        )
-        J, K = params["J"], params["K"]
+        out_dict = {}
+        unique_shapes = set(params_shapes.values())
+        for shape in unique_shapes:
+            # keys that have the selected shape and with their values not set to None
+            keys_with_shape = [
+                k for k in params if params_shapes[k] == shape and k not in none_keys
+            ]
 
-        # TODO could be parallelized
-        classes_data = np.ones((len(classes) * J * K,))
-        for i in range(len(classes)):
-            classes_data[i * J * K : (i + 1) * J * K] = (
-                np.ones((J, K)) * params[classes[i]]
-            ).ravel()
+            # final shape of the output array, that can be
+            # reshaped into (len(keys_with_shape), shape[0], shape[1], ...)
+            final_1D_shape = (reduce(lambda x, y: x * y, [len(keys_with_shape)] + list(shape)),)
+            shape_data = np.ones(final_1D_shape)
 
-        # Hyperparameter, e.g. 'beta_asym', 'mu_asym', ...
-        greeks = self.model.translate_simulation_type(
-            sim_type, return_classes=False, return_greeks=True
-        )
+            # Input every broadcasted value into final output array shape_data
+            for i in range(len(keys_with_shape)):
+                left = reduce(lambda x, y: x * y, [i] + list(shape))
+                right = reduce(lambda x, y: x * y, [i + 1] + list(shape))
+                shape_data[left:right] = (np.ones(shape) * params[keys_with_shape[i]]).ravel()
 
-    def get_sim_data(self):
-        return self.sim_data
+            out_dict[shape] = shape_data
+
+        return out_dict
 
     def reset(self):
         """
@@ -454,9 +517,6 @@ class Controller:
 
         # make sure types are clear first under valid_domain and then initialize within bounds
         self.check_params(self._params)
-
-        # create sim_data to be used in the simulator
-        self.sim_data = self._create_sim_data()
 
         return self._params
 

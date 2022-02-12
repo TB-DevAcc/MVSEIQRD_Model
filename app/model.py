@@ -25,10 +25,13 @@ class Model:
         """
         self.controller = Controller(
             model=self,
+            params=params,
+            fill_missing_values=fill_missing_values,
             default_values_path=default_values_path,
             default_domains_path=default_domains_path,
         )
         self.get_params = self.controller.get_params
+        self.update = self.controller.update
         self.simulator = Simulator()
         self.view = View(self)
         self.plot = self.view.plot
@@ -44,31 +47,12 @@ class Model:
         #
         # self.controller.set_params(params, False)
 
-        self._update_params(params, fill_missing_values, reset=True)
-
     def _update_view(self, params) -> None:
         """
         Updates the view if new data is available
         """
         # TODO implement
         ...
-
-    def _update_params(self, params, fill_missing_values, reset=False) -> None:
-        """
-        Updates the controller if new data/parameters is/are available. 
-        Sets self.controller._params to current parameter dict.
-        """
-        if reset:
-            self.controller.reset()
-
-        if fill_missing_values:
-            # build complete parameter set with controller
-            # add default values to given params dict
-            self.controller.initialize_parameters(params)
-        else:
-            # add given params to already existing parameter dict
-            self.controller.check_params(params)
-            self.controller.set_params(params)
 
     def detect_simulation_type(self, params: dict) -> str:
         """
@@ -294,7 +278,7 @@ class Model:
             retParams["R"],
             retParams["D"],
         ) = self.simulator.run(params=params, simulation_type=simulation_type)
-        self._update_params(params=retParams, fill_missing_values=True, reset=False)
+        self.controller.update(params=retParams, fill_missing_values=True, reset=False)
         params = self.controller.get_params()
 
         # update the view
