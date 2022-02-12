@@ -318,7 +318,8 @@ class Controller:
         """
         self.update_params(params, fill_missing_values, reset=reset)
         t, J, K = self._params["t"], self._params["J"], self._params["K"]
-        self.update_shape_data(t, J, K)
+        # FIXME broken after init because Data is already in the long format
+        # self.update_shape_data(t, J, K)
 
     def update_params(self, params, fill_missing_values, reset=False) -> None:
         """
