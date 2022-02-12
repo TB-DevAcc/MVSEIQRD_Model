@@ -16,176 +16,14 @@ from skimage import io
 
 
 class View:
-    def __init__(
-        self,
-        real_area_data: dict = None,
-        real_params: dict = None,
-        sim_area_data: dict = None,
-        sim_params: dict = None,
-        t=None,
-    ):
-        self.real_area_data = real_area_data
-        self.sim_area_data = sim_area_data
-        self.real_params = real_params
-        self.sim_params = sim_params
-        self.t = t
+    def __init__(self, model):
+        self.model = model
         self.network_svg_path = str(self._create_network_svg(return_b64=False))
         self.network_svg_b64 = (
             "data:image/svg+xml;base64," + str(self._create_network_svg(return_b64=True))[2:-1]
         )
         self.network_iframe_path = str(self._create_network_iframe())
         self.app = self._build_app()
-
-    def plot_sim(self, params: dict = None, sim: bool = True, seir: bool = True, t=None):
-
-        """
-        Plotting the simulated data
-
-        Parameters
-        ----------
-        params : dict
-        sim : boolean
-        seir: bool
-        t : np.array
-
-        """
-
-        # check if params contain values and update or use self.params otherwise
-        if not params:
-            if not self.params:
-                raise ValueError()
-        else:
-            self.sim_params = params
-
-        if seir:
-            self.seir_plot(self.sim_params, t)
-
-        else:
-            self.seiqrds_plot(self.sim_params, t)
-
-    def seir_plot(self, params, t):
-
-        """
-        Plotting the "S I" or S E I R"
-
-        Parameters
-        ----------
-        params : dict
-        t : np.array
-
-        Returns
-        -------
-        fig plotly plot
-
-        """
-
-        fig = go.Figure()
-
-        for key, value in params.items():
-            fig.add_trace(go.Line(x=t, y=np.sum(value, axis=1), mode="lines", name=key))
-            fig.update_layout(autosize=False, width=700, height=700)
-
-        return fig.show()
-
-    def seiqrds_plot(self, params, t):
-
-        """
-        Plotting the "M V S E2 I3 Q3 R D"
-
-        Parameters
-        ----------
-        params : dict
-        t : np.array
-
-        Returns
-        -------
-        fig plotly plot
-
-        """
-
-        fig = go.Figure()
-
-        for key, value in params.items():
-            fig.add_trace(go.Line(x=t, y=np.sum(value, axis=(1, 2)), mode="lines", name=key))
-            fig.update_layout(autosize=False, width=700, height=700)
-
-        return fig.show()
-
-    def plot_real_data(self, df):
-
-        """
-        Plotting the real covid data
-
-        Parameters
-        ----------
-        df : DataFrame
-
-        Returns
-        -------
-        fig
-            plotly plot
-        """
-
-        try:
-            self.c_plt_df = df
-            fig = go.Figure()
-
-            fig.add_trace(
-                go.Line(
-                    x=self.c_plt_df["Meldedatum"],
-                    y=self.c_plt_df["AnzahlFall"],
-                    mode="lines",
-                    name="Anzahl Fälle",
-                )
-            )
-            fig.add_trace(
-                go.Line(
-                    x=self.c_plt_df["Meldedatum"],
-                    y=self.c_plt_df["AnzahlFall_seven_day_average"],
-                    mode="lines",
-                    name="Anzahl Fälle 7-Tage-Mittelwert",
-                )
-            )
-            fig.add_trace(
-                go.Line(
-                    x=self.c_plt_df["Meldedatum"],
-                    y=self.c_plt_df["NeuGenesen"],
-                    mode="lines",
-                    name="Neu Genesen",
-                    visible="legendonly",
-                )
-            )
-            fig.add_trace(
-                go.Line(
-                    x=self.c_plt_df["Meldedatum"],
-                    y=self.c_plt_df["NeuGenesen_seven_day_average"],
-                    mode="lines",
-                    name="Neu Genesen 7-Tage-Mittelwert",
-                    visible="legendonly",
-                )
-            )
-            fig.add_trace(
-                go.Line(
-                    x=self.c_plt_df["Meldedatum"],
-                    y=self.c_plt_df["AnzahlTodesfall"],
-                    mode="lines",
-                    name="Anzahl der Todesfälle",
-                    visible="legendonly",
-                )
-            )
-            fig.add_trace(
-                go.Line(
-                    x=self.c_plt_df["Meldedatum"],
-                    y=self.c_plt_df["AnzahlTodesfall_seven_day_average"],
-                    mode="lines",
-                    name="Anzahl der Todesfälle 7-Tage-Mittelwert",
-                    visible="legendonly",
-                )
-            )
-        except Exception as e:
-            print(e)
-
-        return fig.show()
 
     def _create_network_iframe(
         self,
@@ -195,7 +33,8 @@ class View:
         G = nx.DiGraph(nx.drawing.nx_pydot.read_dot(dot_path))
         net = Network(directed=True, notebook=True)
         net.from_nx(G)
-        options = """
+        options = [
+            """
         var options = \
         {
             "nodes": {
@@ -234,8 +73,38 @@ class View:
                 }
             }
         }
-        """
-        net.set_options(options)
+        """,
+            """
+        var options = \
+        {
+        "nodes":{
+            "font":{
+                "background":"rgba(255,125,104,0.77)"
+            }
+        },
+        "edges":{
+            "color":{
+                "inherit":true
+            },
+            "scaling":{
+                "max":100
+            },
+            "font":{
+                "size":9,
+                "background":"rgba(255,255,255,0.90)"
+            },
+            "smooth":{
+                "forceDirection":"none"
+            }
+        },
+        "physics":{
+            "minVelocity":0.75,
+            "solver":"repulsion"
+        }
+        }
+        """,
+        ]
+        net.set_options(options[1])
         # net.show_buttons(filter_=True)
         # net.show(network_iframe_path)
         net.write_html(str(network_iframe_path), notebook=True)
@@ -268,7 +137,7 @@ class View:
             fig = px.line(df, title="SEIR Simulation classes over time")
             fig.update_layout(
                 autosize=False,
-                width=1200,
+                width=800,
                 height=500,
                 paper_bgcolor="rgba(0,0,0,0)",
                 plot_bgcolor="rgba(0,0,0,0)",
@@ -417,7 +286,7 @@ class View:
                                 id="loading-output",
                                 figure=build_fig(),
                                 className="mx-auto my-auto",
-                                style={"width": 1200, "height": 500, "text-align": "center"},
+                                style={"width": 800, "height": 500, "text-align": "center"},
                             )
                         ],
                         color="#119DFF",
