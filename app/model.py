@@ -66,7 +66,7 @@ class Model:
             simulation_type (e.g. "S I", "S E I R", "M V S E2 I3 Q3 R D")
         """
         # Not None keys
-        keys = [key for key in params.keys() if params[key]]
+        keys = [key for key in params.keys() if params[key] is not None]
 
         sim_type = ""
 

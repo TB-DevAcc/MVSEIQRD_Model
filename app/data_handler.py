@@ -3,6 +3,7 @@ from typing import Tuple
 import pandas as pd
 import numpy as np
 import geopandas as gpd
+
 from .model import Model
 
 
@@ -361,8 +362,7 @@ class DataHandler:
             Dataframe with prepared data, geo data and dates of dataframe
 
         """
-        # TODO
-        sim_type = "M V S E2 I3 Q3 R D"# model.detect_simulation_type(covid_data)
+        sim_type = model.detect_simulation_type(covid_data)
         select_classes = []
         if mode == "I":
             if "I3" in sim_type:
