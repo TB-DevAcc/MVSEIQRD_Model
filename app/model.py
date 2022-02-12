@@ -164,8 +164,12 @@ class Model:
         >>> translate_simulation_type("E2")
         >>> ['E_nt', 'E_tr']
         """
+        # No simulation type supplied
         if not simulation_type:
-            simulation_type = self.get_simulation_type().split()
+            simulation_type = self.get_simulation_type()
+            # If simulation has not been run before
+            if not simulation_type:
+                simulation_type = self.detect_simulation_type().split()
         classes = []
         for letter in simulation_type:
             if letter == "M":
