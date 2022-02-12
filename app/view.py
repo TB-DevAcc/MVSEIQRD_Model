@@ -1,6 +1,8 @@
 import time
+from pathlib import Path
 
 import dash_bootstrap_components as dbc
+import networkx as nx
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
@@ -8,6 +10,7 @@ import pydot
 from dash import dcc, html
 from dash.dependencies import Input, Output, State
 from jupyter_dash import JupyterDash
+from pyvis.network import Network
 from skimage import io
 
 
@@ -25,7 +28,8 @@ class View:
         self.real_params = real_params
         self.sim_params = sim_params
         self.t = t
-        self.network_svg_path = self._create_network_svg()
+        self.network_svg_path = str(self._create_network_svg())
+        self.network_iframe_path = str(self._create_network_iframe())
         self.app = self._build_app()
 
     def plot_sim(self, params: dict = None, sim: bool = True, seir: bool = True, t=None):
@@ -179,16 +183,67 @@ class View:
 
         return fig.show()
 
-    def _create_network_svg(self, path=None, network_svg_path=None) -> str:
-        if not path:
-            path = "data/param_graph.dot"
-        graphs = pydot.graph_from_dot_file(path)
+    def _create_network_iframe(
+        self,
+        network_iframe_path=Path("assets\\network.html"),
+        dot_path=Path("data/param_graph.dot"),
+    ):
+        G = nx.DiGraph(nx.drawing.nx_pydot.read_dot(dot_path))
+        net = Network(directed=True, notebook=True)
+        net.from_nx(G)
+        options = """
+        var options = \
+        {
+            "nodes": {
+                "font": {
+                    "background": "rgba(255,125,104,0.77)"
+                }
+            },
+            "edges": {
+                "color": {
+                    "inherit": true
+                },
+                "scaling": {
+                    "max": 100
+                },
+                "font": {
+                    "size": 9,
+                    "background": "rgba(255,255,255,0.90)"
+                },
+                "smooth": {
+                    "forceDirection": "none"
+                }
+            },
+            "layout": {
+                "hierarchical": {
+                    "enabled": true,
+                    "direction": "LR",
+                    "sortMethod": "directed"
+                }
+            },
+            "interaction": {
+                "multiselect": true
+            },
+            "physics": {
+                "hierarchicalRepulsion": {
+                    "centralGravity": 0
+                }
+            }
+        }
+        """
+        net.set_options(options)
+        # net.show_buttons(filter_=True)
+        # net.show('assets/network.html')
+        net.write_html(str(network_iframe_path), notebook=True)
+        return network_iframe_path
+
+    def _create_network_svg(
+        self, network_svg_path=Path("assets/network.svg"), dot_path=Path("data/param_graph.dot")
+    ) -> str:
+        graphs = pydot.graph_from_dot_file(dot_path)
         graph = graphs[0]
         graph.set_bgcolor("transparent")
         graph.set_size(8)
-
-        if not network_svg_path:
-            network_svg_path = "assets/network.svg"
         graph.write_svg(network_svg_path)
         return network_svg_path
 
@@ -327,11 +382,16 @@ class View:
                     children=[
                         dcc.Loading(
                             children=[
-                                html.Img(
-                                    src=self.network_svg_path,
+                                html.Iframe(
+                                    src=self.network_iframe_path,
                                     id="network-output",
                                     className="mx-auto mb-1 mt-5 pt-5",
-                                    style={"width": 600, "height": 250, "text-align": "center",},
+                                    style={
+                                        "width": 600,
+                                        "height": 250,
+                                        "text-align": "center",
+                                        "background-color": "transparent",
+                                    },
                                 )
                             ],
                             color="#119DFF",
