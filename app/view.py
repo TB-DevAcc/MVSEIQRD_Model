@@ -5,6 +5,7 @@ from pathlib import Path
 import dash_bootstrap_components as dbc
 import networkx as nx
 import numpy as np
+import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import pydot
@@ -12,7 +13,6 @@ from dash import dcc, html
 from dash.dependencies import Input, Output, State
 from jupyter_dash import JupyterDash
 from pyvis.network import Network
-from skimage import io
 
 
 class View:
@@ -24,6 +24,36 @@ class View:
         )
         self.network_iframe_path = str(self._create_network_iframe())
         self.app = self._build_app()
+
+    def plot(self, params=None, layout_dict: dict = None, show: bool = False):
+        """
+        Plots the course of the parameter development over time.
+
+        Returns a plotly express plot
+        """
+        if not params:
+            params = self.model.get_params()
+
+        classes = self.model.translate_simulation_type()
+        params = {k: np.sum(v, axis=(1, 2)) for k, v in params.items() if k in classes}
+        df = pd.DataFrame(params)
+
+        layout = {
+            "title": "Simulation",
+            "xaxis_title": r"$\text{Time } t \text{ in days}$",
+            "yaxis_title": r"$\text{Number of people } n$",
+            "legend_title_text": "Classes",
+        }
+        if layout_dict:
+            for k, v in layout_dict:
+                layout[k] = v
+
+        fig = px.line(df)
+        fig.update_layout(go.Layout(layout))
+
+        if show:
+            fig.show()
+        return fig
 
     def _create_network_iframe(
         self,
