@@ -1,5 +1,4 @@
 import base64
-import time
 from pathlib import Path
 
 import dash_bootstrap_components as dbc
@@ -29,7 +28,7 @@ class View:
         """
         Plots the course of the parameter development over time.
 
-        Returns a plotly express plot
+        Returns a plotly express figure
         """
         if not params:
             params = self.model.get_params()
@@ -160,19 +159,6 @@ class View:
         """
         returns Jupyter-Dash Webapp
         """
-
-        def build_fig(df=None):
-            if not df:
-                df = {}
-            fig = px.line(df, title="SEIR Simulation classes over time")
-            fig.update_layout(
-                autosize=False,
-                width=800,
-                height=500,
-                paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="rgba(0,0,0,0)",
-            )
-            return fig
 
         def build_slider(kwargs=None):
             """
@@ -314,7 +300,7 @@ class View:
                         children=[
                             dcc.Graph(
                                 id="loading-output",
-                                figure=build_fig(),
+                                figure=self.plot(layout_dict={"width": 800, "height": 500}),
                                 className="mx-auto my-auto",
                                 style={"width": 800, "height": 500, "text-align": "center"},
                             )
@@ -373,8 +359,7 @@ class View:
         # Button functionality
         @app.callback(Output("loading-output", "figure"), [Input("loading-button", "n_clicks")])
         def load_output(n_clicks):
-            time.sleep(5)
-            return build_fig()
+            return self.plot(layout_dict={"width": 800, "height": 500})
 
         return app
 
