@@ -185,7 +185,7 @@ class View:
 
     def _create_network_iframe(
         self,
-        network_iframe_path=Path("assets\\network.html"),
+        network_iframe_path=Path("assets/network.html"),
         dot_path=Path("data/param_graph.dot"),
     ):
         G = nx.DiGraph(nx.drawing.nx_pydot.read_dot(dot_path))
@@ -233,7 +233,7 @@ class View:
         """
         net.set_options(options)
         # net.show_buttons(filter_=True)
-        # net.show('assets/network.html')
+        # net.show(network_iframe_path)
         net.write_html(str(network_iframe_path), notebook=True)
         return network_iframe_path
 
@@ -382,8 +382,8 @@ class View:
                     children=[
                         dcc.Loading(
                             children=[
-                                html.Iframe(
-                                    src=self.network_iframe_path,
+                                html.Img(
+                                    src=self.network_svg_path,
                                     id="network-output",
                                     className="mx-auto mb-1 mt-5 pt-5",
                                     style={
