@@ -30,7 +30,9 @@ class View:
         self.sim_params = sim_params
         self.t = t
         self.network_svg_path = str(self._create_network_svg(return_b64=False))
-        self.network_svg_b64 = self._create_network_svg(return_b64=True)
+        self.network_svg_b64 = (
+            "data:image/svg+xml;base64," + str(self._create_network_svg(return_b64=True))[2:-1]
+        )
         self.network_iframe_path = str(self._create_network_iframe())
         self.app = self._build_app()
 
