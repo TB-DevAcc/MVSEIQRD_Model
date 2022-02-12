@@ -138,6 +138,70 @@ class Model:
                 "For supported simulation types see Controller.supported_sim_types."
             )
 
+    def get_simulation_type(self) -> str:
+        return self.simulator.simulation_type
+
+    def translate_simulation_type(self, simulation_type: str = None) -> list:
+        """
+        Translates simulation type from detect_simulation_type into a list of 
+        identifiers for epidemiological classes used in params. 
+        Important for classes such as I3, so convert into I_asym, I_sym, I_sev.
+
+        Parameters
+        ----------
+        simulation_type : str, optional
+            simulation type to be translated, 
+            by default the current simulation type is read from the simulator
+
+        Returns
+        -------
+        list
+            identifiers for params dict
+        
+        Examples
+        -------
+        >>> translate_simulation_type("E2")
+        >>> ['E_nt', 'E_tr']
+        """
+        if not simulation_type:
+            simulation_type = self.get_simulation_type().split()
+        classes = []
+        for letter in simulation_type:
+            if letter == "M":
+                classes.append("M")
+            elif letter == "V":
+                classes.append("V")
+            elif letter == "S":
+                classes.append("S")
+            elif letter == "E":
+                classes.append("E")
+            elif letter == "E2":
+                classes.append("E_nt")
+                classes.append("E_tr")
+            elif letter == "I":
+                classes.append("I")
+            elif letter == "I2":
+                classes.append("I_asym")
+                classes.append("I_sym")
+            elif letter == "I3":
+                classes.append("I_asym")
+                classes.append("I_sym")
+                classes.append("I_sev")
+            elif letter == "Q":
+                classes.append("Q")
+            elif letter == "Q2":
+                classes.append("Q_asym")
+                classes.append("Q_sym")
+            elif letter == "Q3":
+                classes.append("Q_asym")
+                classes.append("Q_sym")
+                classes.append("Q_sev")
+            elif letter == "R":
+                classes.append("R")
+            elif letter == "D":
+                classes.append("D")
+        return classes
+
     def reset_parameters(self):
         """
         Resets the internal parameter list to an empty list. 
