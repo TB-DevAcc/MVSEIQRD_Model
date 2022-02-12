@@ -409,7 +409,7 @@ class View:
 
         return app
 
-        def run_app(self):
-            """Run app and display result inline in the notebook"""
-            return self.app.run_server(mode="inline", width="100%", height="880")
+    def run_app(self):
+        """Run app and display result inline in the notebook"""
+        return self.app.run_server(mode="inline", width="100%", height="880")
 
