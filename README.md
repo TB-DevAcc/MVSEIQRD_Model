@@ -21,7 +21,7 @@ The project takes place between December 2021 and March 2022.
 
 ## :wrench: Usage
 
-Tweak hyperparameters to review different scenarios.
+Tweak hyperparameters to review different scenarios on the Dashboard. See MVSEIQRD_Modell.ipynb.
 
 ## :boy: Authors
 
