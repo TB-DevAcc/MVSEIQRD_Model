@@ -1040,14 +1040,14 @@ class Simulator:
         """
         # TODO find better way
         for key in params:
-            if params[key] != None:
+            if params[key] is not None:
                 if key in [ "beta_asym", "beta_sym", "beta_sev"]:
                     self.params[key] = np.ones((int(t[-1]) + 1, self.J, self.K, self.K)) * np.array(params[key])
                 elif key in ["M", "V", "R", "S", "E", "E_tr", "E_nt",
                              "I", "I_asym", "I_sym", "I_sev", "Q", "Q_asym", "Q_sym", "Q_sev",
-                             "D", "N"]:
+                             "D"]:
                     self.params[key] = np.ones((self.J, self.K)) * np.array(params[key])
-                elif key not in ["Beds"]:
+                elif key not in ["K", "J", "N", "Beds"]:
                     self.params[key] = np.ones((int(t[-1]) + 1, self.J, self.K)) * np.array(params[key])
 
         sol = solve_ivp(

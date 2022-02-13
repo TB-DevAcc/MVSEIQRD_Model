@@ -194,7 +194,7 @@ class Controller:
         self.default_values = self._load_json(default_values_path)
         self.default_domains = self._load_json(default_domains_path)
         self.map_params = {}
-        self.data_handler = DataHandler(self)
+        self.data_handler = DataHandler()
 
     def reset(self):
         """
@@ -350,11 +350,21 @@ class Controller:
         if load_base_data:
             base_data = self.data_handler.get_simulation_initial_values()
             if len(base_data) > 0:
-                self._params["N"], self._params["Beds"] = [], []
+                temp_params = {"N": [], "Beds":[]}
                 for i, (key, value) in enumerate(base_data.items()):
-                    self._params["N"].append(value["N"])
-                    self._params["Beds"].append(value["B"])
-                    self.map_params[i] = key
+                    temp_params["N"].append(value["N"])
+                    temp_params["Beds"].append(value["B"])
+                    if key < 10000:
+                        self.map_params[i] = f"0{key}"
+                    else:
+                        self.map_params[i] = f"{key}"
+
+            self._params["N"] = np.array(temp_params["N"], dtype=np.float64)
+            self._params["I_asym"] = self._params["N"] * 0.002
+            self._params["I_sym"] = self._params["N"] * 0.0002
+            self._params["I_sev"] = self._params["N"] * 0.00002
+            self._params["Beds"] = np.array(temp_params["Beds"], dytpe=np.float64)
+            self._params["S"] = self._params["N"] - self.params["I_asym"] - self._params["I_sym"] - self._params["I_sev"]
 
         # make sure types are clear first under valid_domain and then initialize within bounds
         self.check_params(self._params)

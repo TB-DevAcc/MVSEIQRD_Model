@@ -4,8 +4,6 @@ import pandas as pd
 import numpy as np
 import geopandas as gpd
 
-from .model import Model
-
 
 class DataHandler:
     """
@@ -14,13 +12,11 @@ class DataHandler:
 
     def __init__(
         self,
-        controller = None,
         default_age_group_data_path="data/simulation_test/altersgruppen.csv",
         default_hospital_beds_data_path="data/simulation_test/krankenhausbetten.csv",
         default_recorded_covid_cases_path="data/RKI_COVID19.csv",
         default_districts_geometry_path="data/RKI_Corona_Landkreise.shp",
     ):
-        self.controller = controller
         self.default_initial_data = self._load_simulation_initial_values(
             default_age_group_data_path, default_hospital_beds_data_path
         )
@@ -219,7 +215,7 @@ class DataHandler:
             initial_values[key]["N_total"] = initial_values[key].pop("Insgesamt")
             initial_values[key]["B"] = initial_values[key].pop("Krankenhausbetten")
             initial_values[key]["N"] = np.array(
-                [value2 for key2, value2 in value.items() if key2 not in ["N", "B"]]
+                [value2 for key2, value2 in value.items() if key2 not in ["N_total", "B"]]
             )
             initial_values[key] = {
                 key2: initial_values[key][key2]
@@ -380,8 +376,7 @@ class DataHandler:
         data = np.sum([covid_data[classes] for classes in select_classes], axis=(0))
         data_frame = pd.DataFrame(np.sum(data, axis=(2)))
 
-        # TODO: Index von dict muss int sein, kein str
-        map_params = {0: '01001'}#, 1: '01002'} # self.controller.map_params
+        map_params = model.controller.map_params
         data_frame.rename(columns=map_params, inplace=True)
         data_frame = data_frame.assign(Meldedatum=pd.date_range('2021-01-01', periods=365))
         data_frame = pd.melt(data_frame, id_vars=['Meldedatum'], value_vars=map_params.values())
