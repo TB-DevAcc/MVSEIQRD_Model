@@ -25,7 +25,7 @@ digraph G {
       I_sev [fillcolor="#F8CECC"]
       Q_sev [fillcolor="#F8CECC"]
       D [fillcolor="#DAE8FC"]
-    }
+    };
     rankdir=LR;
     M -> S [color=black, label=rho_mat];
     S -> V [color=black, label=nu];
@@ -57,5 +57,5 @@ digraph G {
     Q_sev -> R [color=black, label=gamma];
     # ->D
     I_sev -> D [color=black, label=sigma];
-    Q_sev -> D [color=black, label=sigma];
+    Q_sev -> D [color=black, label=sigma]
 }

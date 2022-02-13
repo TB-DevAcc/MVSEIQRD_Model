@@ -125,3 +125,7 @@ venv.bak/
 
 # large csv's
 RKI_COVID19.csv
+
+# generated assets
+network.svg
+network.html

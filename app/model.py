@@ -1,3 +1,5 @@
+import numpy as np
+
 from .controller import Controller
 from .simulator import Simulator
 from .view import View
@@ -26,7 +28,8 @@ class Model:
         )
         self.get_params = self.controller.get_params
         self.simulator = Simulator()
-        self.view = View()
+        self.view = View(self)
+        self.plot = self.view.plot
 
         # TODO load data from DataHandler and put them into params
         # self.data_handler = DataHandler()
@@ -77,7 +80,11 @@ class Model:
             simulation_type (e.g. "S I", "S E I R", "M V S E2 I3 Q3 R D")
         """
         # Not None keys
-        keys = [key for key in params.keys() if params[key]]
+        keys = [
+            key
+            for key in params.keys()
+            if isinstance(params[key], np.ndarray) or isinstance(params[key], list)
+        ]
 
         sim_type = ""
 
@@ -134,9 +141,79 @@ class Model:
             return sim_type
         else:
             raise ValueError(
-                f"Simulation type {sim_type} not supported."
+                f"Simulation type {sim_type} not supported. "
                 "For supported simulation types see Controller.supported_sim_types."
             )
+
+    def get_simulation_type(self) -> str:
+        return self.simulator.simulation_type
+
+    def translate_simulation_type(self, simulation_type: str = None) -> list:
+        """
+        Translates simulation type from detect_simulation_type into a list of 
+        identifiers for epidemiological classes used in params. 
+        Important for classes such as I3, so convert into I_asym, I_sym, I_sev.
+
+        Parameters
+        ----------
+        simulation_type : str, optional
+            simulation type to be translated, 
+            by default the current simulation type is read from the simulator
+
+        Returns
+        -------
+        list
+            identifiers for params dict
+        
+        Examples
+        -------
+        >>> translate_simulation_type("E2")
+        >>> ['E_nt', 'E_tr']
+        """
+        # No simulation type supplied
+        if not simulation_type:
+            simulation_type = self.get_simulation_type()
+            # If simulation has not been run before
+            if not simulation_type:
+                simulation_type = self.detect_simulation_type(self.get_params()).split()
+            else:
+                simulation_type = simulation_type.split()
+        classes = []
+        for letter in simulation_type:
+            if letter == "M":
+                classes.append("M")
+            elif letter == "V":
+                classes.append("V")
+            elif letter == "S":
+                classes.append("S")
+            elif letter == "E":
+                classes.append("E")
+            elif letter == "E2":
+                classes.append("E_nt")
+                classes.append("E_tr")
+            elif letter == "I":
+                classes.append("I")
+            elif letter == "I2":
+                classes.append("I_asym")
+                classes.append("I_sym")
+            elif letter == "I3":
+                classes.append("I_asym")
+                classes.append("I_sym")
+                classes.append("I_sev")
+            elif letter == "Q":
+                classes.append("Q")
+            elif letter == "Q2":
+                classes.append("Q_asym")
+                classes.append("Q_sym")
+            elif letter == "Q3":
+                classes.append("Q_asym")
+                classes.append("Q_sym")
+                classes.append("Q_sev")
+            elif letter == "R":
+                classes.append("R")
+            elif letter == "D":
+                classes.append("D")
+        return classes
 
     def reset_parameters(self):
         """
