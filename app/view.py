@@ -300,7 +300,7 @@ class View:
                         children=[
                             dcc.Graph(
                                 id="loading-output",
-                                figure=self.plot(layout_dict={"width": 800, "height": 500}),
+                                figure=px.line(width=800, height=500),
                                 className="mx-auto my-auto",
                                 style={"width": 800, "height": 500, "text-align": "center"},
                             )

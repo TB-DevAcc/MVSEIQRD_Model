@@ -1,5 +1,8 @@
 import json
+from functools import reduce
+
 import numpy as np
+
 from .data_handler import DataHandler
 
 
@@ -74,6 +77,9 @@ class Controller:
 
     def __init__(
         self,
+        model,
+        params: dict = None,
+        fill_missing_values: bool = True,
         default_values_path="data/default_values.json",
         default_domains_path="data/default_domains.json",
     ):
@@ -146,6 +152,7 @@ class Controller:
         J in [0, 1]                   # geographic locations
         K in [0, 1]                   # age groups
         """
+        self.model = model
         self._params = {
             "M": None,
             "V": None,
@@ -165,6 +172,8 @@ class Controller:
             "D": None,
             "N": None,
             "K": None,
+            "J": None,
+            "t": None,
             "basic_reprod_num": None,
             "Beds": None,
             "beta_asym": None,
@@ -176,24 +185,238 @@ class Controller:
             "gamma_sev_r": None,
             "gamma_sev_d": None,
             "epsilon": None,
-            "mu": None,
-            "mu_asym": None,
             "mu_sym": None,
             "mu_sev": None,
             "nu": None,
-            "rho": None,
             "rho_mat": None,
             "rho_vac": None,
             "rho_rec": None,
             "sigma": None,
-            "tau": None,
+            "tau_asym": None,
+            "tau_sym": None,
+            "tau_sev": None,
             "psi": None,
-            "J": None,
-            "K": None,
         }
         self.default_values = self._load_json(default_values_path)
         self.default_domains = self._load_json(default_domains_path)
         self.data_handler = DataHandler()
+
+        self.update_params(params, fill_missing_values, reset=True)
+
+        t, J, K = self._params["t"], self._params["J"], self._params["K"]
+
+        self.PARAM_SHAPE = {
+            "M": (J, K),
+            "V": (J, K),
+            "R": (J, K),
+            "S": (J, K),
+            "E": (J, K),
+            "E_tr": (J, K),
+            "E_nt": (J, K),
+            "I": (J, K),
+            "I_asym": (J, K),
+            "I_sym": (J, K),
+            "I_sev": (J, K),
+            "Q": (J, K),
+            "Q_asym": (J, K),
+            "Q_sym": (J, K),
+            "Q_sev": (J, K),
+            "D": (J, K),
+            "N": (J, K),
+            "K": (0,),
+            "J": (0,),
+            "t": (0,),
+            "basic_reprod_num": (t, J, K),
+            "Beds": (1,),
+            "beta_asym": (t, J, K, K),
+            "beta_sym": (t, J, K, K),
+            "beta_sev": (t, J, K, K),
+            "gamma_asym": (t, J, K),
+            "gamma_sym": (t, J, K),
+            "gamma_sev": (t, J, K),
+            "gamma_sev_r": (t, J, K),
+            "gamma_sev_d": (t, J, K),
+            "epsilon": (t, J, K),
+            "mu_sym": (t, J, K),
+            "mu_sev": (t, J, K),
+            "nu": (t, J, K),
+            "rho_mat": (t, J, K),
+            "rho_vac": (t, J, K),
+            "rho_rec": (t, J, K),
+            "sigma": (t, J, K),
+            "tau_asym": (t, J, K),
+            "tau_sym": (t, J, K),
+            "tau_sev": (t, J, K),
+            "psi": (t, J, K),
+        }
+
+        self.key_list = [
+            "M",
+            "V",
+            "R",
+            "S",
+            "E",
+            "E_tr",
+            "E_nt",
+            "I",
+            "I_asym",
+            "I_sym",
+            "I_sev",
+            "Q",
+            "Q_asym",
+            "Q_sym",
+            "Q_sev",
+            "D",
+            "N",
+            "K",
+            "J",
+            "t",
+            "basic_reprod_num",
+            "Beds",
+            "beta_asym",
+            "beta_sym",
+            "beta_sev",
+            "gamma_asym",
+            "gamma_sym",
+            "gamma_sev",
+            "gamma_sev_r",
+            "gamma_sev_d",
+            "epsilon",
+            "mu_sym",
+            "mu_sev",
+            "nu",
+            "rho_mat",
+            "rho_vac",
+            "rho_rec",
+            "sigma",
+            "tau_asym",
+            "tau_sym",
+            "tau_sev",
+            "psi",
+        ]
+
+        # Set with update_shape_data()
+        self.classes_keys = None
+        self.classes_data = None  # [(J, K)]
+        self.greeks_keys = None
+        self.greeks_data = None  # [(t, J, K)]
+        self.special_greeks_keys = None
+        self.special_greeks_data = None  # [(t, J, K, K)]
+        self.hyper_keys = None
+        self.hyper_data = None  # [(0,)]
+        self.misc_keys = None
+        self.misc_data = None  # [(1,)]
+        self.update_shape_data(t, J, K)
+
+        # Data for direct use for the simulator (with usually solve_ivp)
+        self.sim_data = None  # set in initialize_parameters() or manually with _create_sim_data()
+
+    def update(self, params, fill_missing_values, reset=False) -> None:
+        """
+        Updates the controller to the latest parameters. 
+        Wrapper around update_params and update_shape_data.
+        """
+        self.update_params(params, fill_missing_values, reset=reset)
+        t, J, K = self._params["t"], self._params["J"], self._params["K"]
+        # FIXME broken after init because Data is already in the long format
+        # self.update_shape_data(t, J, K)
+
+    def update_params(self, params, fill_missing_values, reset=False) -> None:
+        """
+        Updates the controller if new data/parameters is/are available. 
+        Sets self._params to current parameter dict.
+        """
+        if reset:
+            self.reset()
+
+        if fill_missing_values:
+            # build complete parameter set with controller
+            # add default values to given params dict
+            self.initialize_parameters(params)
+        else:
+            # add given params to already existing parameter dict
+            self.check_params(params)
+            self.set_params(params)
+
+    def update_shape_data(self, t, J, K):
+        shape_data_dict = self.broadcast_params_into_shape()
+        # shapes taken from PARAM_SHAPE
+        self.classes_data = shape_data_dict[(J, K)]
+        self.greeks_data = shape_data_dict[(t, J, K)]
+        self.special_greeks_data = shape_data_dict[(t, J, K, K)]
+        self.hyper_data = shape_data_dict[(0,)]
+        self.misc_data = shape_data_dict[(1,)]
+
+    def broadcast_params_into_shape(self, params: dict = None, params_shapes: dict = None) -> dict:
+        """
+        Creates a 1D np.array for every unique shape in params_shapes. 
+        E.g. all params with shape (J, K) are converted to an array with 
+        shape (NumberOfClasses*J*K,). Can be reshaped back into an array with the first dimension
+        being the parameter using np.reshape(X, NumberOfClasses, J, K).
+
+        The order of the parameters in the output one dimensional array is based on the order
+        they are in in params
+
+        Parameters
+        ----------
+        params : dict, optional
+            [description], by default None
+        params_shapes : dict, optional
+            [description], by default None
+
+        Returns
+        -------
+        dict
+            Dictionary with key being the shape and value being the
+            one dimensional array of shape (NumberOfClasses*J*K,)
+        """
+        if not params:
+            params = self._params
+        if not params_shapes:
+            params_shapes = self.PARAM_SHAPE
+
+        # Parameters set to None
+        none_keys = [
+            key
+            for key in params.keys()
+            if not (isinstance(params[key], np.ndarray) or params[key])
+        ]
+
+        out_dict = {}
+        unique_shapes = set(params_shapes.values())
+        for shape in unique_shapes:
+            # keys that have the selected shape and with their values not set to None
+            keys_with_shape = [
+                k for k in params if params_shapes[k] == shape and k not in none_keys
+            ]
+
+            # Save key lists to check order later if necessary
+            t, J, K = params["t"], params["J"], params["K"]
+            if shape == (J, K):
+                self.classes_keys = keys_with_shape
+            elif shape == (t, J, K):
+                self.greeks_keys = keys_with_shape
+            elif shape == (t, J, K, K):
+                self.special_greeks_keys = keys_with_shape
+            elif shape == (0,):
+                self.hyper_keys = keys_with_shape
+            elif shape == (1,):
+                self.misc_keys = keys_with_shape
+
+            # final shape of the output array, that can be
+            # reshaped into (len(keys_with_shape), shape[0], shape[1], ...)
+            final_1D_shape = (reduce(lambda x, y: x * y, [len(keys_with_shape)] + list(shape)),)
+            shape_data = np.ones(final_1D_shape)
+
+            # Input every broadcasted value into final output array shape_data
+            for i in range(len(keys_with_shape)):
+                left = reduce(lambda x, y: x * y, [i] + list(shape))
+                right = reduce(lambda x, y: x * y, [i + 1] + list(shape))
+                shape_data[left:right] = (np.ones(shape) * params[keys_with_shape[i]]).ravel()
+
+            out_dict[shape] = shape_data
+
+        return out_dict
 
     def reset(self):
         """
@@ -376,6 +599,7 @@ class Controller:
         for key in params:
             self._params[key] = params[key]
         self.check_params(self._params)
+        self.sim_data = self._create_sim_data()
 
     def get_params(self, keys: list = None) -> dict:
         """

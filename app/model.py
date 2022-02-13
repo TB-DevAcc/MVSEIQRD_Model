@@ -24,9 +24,14 @@ class Model:
          default_domains_path
         """
         self.controller = Controller(
-            default_values_path=default_values_path, default_domains_path=default_domains_path
+            model=self,
+            params=params,
+            fill_missing_values=fill_missing_values,
+            default_values_path=default_values_path,
+            default_domains_path=default_domains_path,
         )
         self.get_params = self.controller.get_params
+        self.update = self.controller.update
         self.simulator = Simulator()
         self.view = View(self)
         self.plot = self.view.plot
@@ -42,31 +47,12 @@ class Model:
         #
         # self.controller.set_params(params, False)
 
-        self._update_params(params, fill_missing_values, reset=True)
-
     def _update_view(self, params) -> None:
         """
         Updates the view if new data is available
         """
         # TODO implement
         ...
-
-    def _update_params(self, params, fill_missing_values, reset=False) -> None:
-        """
-        Updates the controller if new data/parameters is/are available. 
-        Sets self.controller._params to current parameter dict.
-        """
-        if reset:
-            self.controller.reset()
-
-        if fill_missing_values:
-            # build complete parameter set with controller
-            # add default values to given params dict
-            self.controller.initialize_parameters(params)
-        else:
-            # add given params to already existing parameter dict
-            self.controller.check_params(params)
-            self.controller.set_params(params)
 
     def detect_simulation_type(self, params: dict) -> str:
         """
@@ -148,11 +134,16 @@ class Model:
     def get_simulation_type(self) -> str:
         return self.simulator.simulation_type
 
-    def translate_simulation_type(self, simulation_type: str = None) -> list:
+    def translate_simulation_type(
+        self, simulation_type: str = None, return_classes: bool = True, return_greeks: bool = False
+    ) -> list:
         """
         Translates simulation type from detect_simulation_type into a list of 
         identifiers for epidemiological classes used in params. 
         Important for classes such as I3, so convert into I_asym, I_sym, I_sev.
+
+        If return_classes is set to False, no classes will be returned.
+        If return_greeks is set to True, hyperparameter will be returned.
 
         Parameters
         ----------
@@ -170,12 +161,14 @@ class Model:
         >>> translate_simulation_type("E2")
         >>> ['E_nt', 'E_tr']
         """
+        params = self.get_params()
+
         # No simulation type supplied
         if not simulation_type:
             simulation_type = self.get_simulation_type()
             # If simulation has not been run before
             if not simulation_type:
-                simulation_type = self.detect_simulation_type(self.get_params()).split()
+                simulation_type = self.detect_simulation_type(params).split()
             else:
                 simulation_type = simulation_type.split()
         classes = []
@@ -213,7 +206,45 @@ class Model:
                 classes.append("R")
             elif letter == "D":
                 classes.append("D")
-        return classes
+
+        if return_classes and not return_greeks:
+            return classes
+
+        greeks = [
+            "beta_asym",
+            "beta_sym",
+            "beta_sev",
+            "gamma_asym",
+            "gamma_sym",
+            "gamma_sev",
+            "gamma_sev_r",
+            "gamma_sev_d",
+            "epsilon",
+            "mu_sym",
+            "mu_sev",
+            "nu",
+            "rho_mat",
+            "rho_vac",
+            "rho_rec",
+            "sigma",
+            "tau_asym",
+            "tau_sym",
+            "tau_sev",
+            "psi",
+        ]
+        # Not None greeks
+        greeks = [
+            key
+            for key in params.keys()
+            if isinstance(params[key], np.ndarray)
+            or isinstance(params[key], list)
+            and key in greeks
+        ]
+
+        if return_classes and return_greeks:
+            return classes + greeks
+        elif return_greeks:
+            return greeks
 
     def reset_parameters(self):
         """
@@ -247,7 +278,7 @@ class Model:
             retParams["R"],
             retParams["D"],
         ) = self.simulator.run(params=params, simulation_type=simulation_type)
-        self._update_params(params=retParams, fill_missing_values=True, reset=False)
+        self.controller.update(params=retParams, fill_missing_values=True, reset=False)
         params = self.controller.get_params()
 
         # update the view
