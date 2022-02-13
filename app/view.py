@@ -44,6 +44,8 @@ class View:
             "xaxis_title": "Time t in days",
             "yaxis_title": "Number of people n",
             "legend_title_text": "Classes",
+            "plot_bgcolor": "rgba(255, 255, 255, 0.1)",
+            "paper_bgcolor": "rgba(0, 0, 0, 0)",
         }
         if layout_dict:
             for k, v in layout_dict.items():
@@ -192,7 +194,7 @@ class View:
         app = JupyterDash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP],)
 
         colors = {
-            "background": "#7a9e7e",
+            "background": "#577590",
             "text": "#7FDBFF",
         }
 
@@ -369,5 +371,5 @@ class View:
 
     def run_app(self):
         """Run app and display result inline in the notebook"""
-        return self.app.run_server(mode="inline", width="1400", height="880")
+        return self.app.run_server(mode="inline", width="1600", height="880")
 
