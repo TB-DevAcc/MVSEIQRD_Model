@@ -1,4 +1,5 @@
 import base64
+from glob import glob
 from pathlib import Path
 
 import dash_bootstrap_components as dbc
@@ -342,6 +343,9 @@ class View:
             children=[header, main_row, footer,],
         )
 
+        # HACK could be done a lot cleaner...
+        global update_params
+        update_params = self.model.controller.update_params
         # Slider Functionality
         for slider_key in slider_dict:
             slider_output_id = slider_key + "_output"
@@ -355,7 +359,10 @@ class View:
                 + "def "
                 + "update_output_"
                 + slider_key
-                + "(value):"
+                + "(value):\n\t"
+                + "update_params(params={'"
+                + slider_key
+                + "':value}, fill_missing_values=False, reset=False)\n\t"
                 + "return "
                 + "'"
                 + slider_key

@@ -335,7 +335,6 @@ class Controller:
             self.initialize_parameters(params)
         else:
             # add given params to already existing parameter dict
-            self.check_params(params)
             self.set_params(params)
 
     def update_shape_data(self, t, J, K):
@@ -597,9 +596,11 @@ class Controller:
                 value of class attribute described by key
         """
         for key in params:
-            self._params[key] = params[key]
+            # Consider shape of parameter and set new values to uniformally distributed value
+            # TODO find a more accurate extrapolation method to conserve relations in the param
+            target_len = len(self._params[key])
+            self._params[key] = [params[key] for i in range(target_len)]
         self.check_params(self._params)
-        self.sim_data = self._create_sim_data()
 
     def get_params(self, keys: list = None) -> dict:
         """
