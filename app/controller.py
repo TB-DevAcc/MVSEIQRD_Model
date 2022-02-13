@@ -363,8 +363,8 @@ class Controller:
             self._params["I_asym"] = self._params["N"] * 0.002
             self._params["I_sym"] = self._params["N"] * 0.0002
             self._params["I_sev"] = self._params["N"] * 0.00002
-            self._params["Beds"] = np.array(temp_params["Beds"], dytpe=np.float64)
-            self._params["S"] = self._params["N"] - self.params["I_asym"] - self._params["I_sym"] - self._params["I_sev"]
+            self._params["Beds"] = np.array(temp_params["Beds"], dtype=np.float64)
+            self._params["S"] = self._params["N"] - self._params["I_asym"] - self._params["I_sym"] - self._params["I_sev"]
 
         # make sure types are clear first under valid_domain and then initialize within bounds
         self.check_params(self._params)
