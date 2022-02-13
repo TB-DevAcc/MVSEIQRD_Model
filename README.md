@@ -1,11 +1,15 @@
-# SEIQRS
+# MVSEIQRD Model
+
+*Maternity-derived Immunity - Vaccinated - Susceptible - Exposed - Infectious - Quarantined - Recovered - Dead*
+
+An extended SEIR model.
 
 <p align="center">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a1/SEIR-Simulation.svg/460px-SEIR-Simulation.svg.png" witdh="50%">
+    <img src="assets/full_plot.png" witdh="50%">
 <p>
 
 [![made-with-python](https://img.shields.io/badge/Made%20with-Python-1f425f.svg)](https://www.python.org/)
-<img align="left" src="https://img.shields.io/github/last-commit/TB-DevAcc/SEIQRS" alt="Last-commit Badge">
+<img align="left" src="https://img.shields.io/github/last-commit/TB-DevAcc/MVSEIQRD_Model" alt="Last-commit Badge">
 
 ## Basic Overview
 
