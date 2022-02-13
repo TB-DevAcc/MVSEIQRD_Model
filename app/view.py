@@ -170,15 +170,15 @@ class View:
             """
             sliderparams = {
                 "min": 0,
-                "max": 100,
-                "value": 65,
-                "step": 5.0,
+                "max": 1,
+                "value": 0.65,
+                "step": 0.05,
                 "marks": {
                     0: {"label": "0", "style": {"color": "#0b4f6c"}},
-                    25: {"label": "25", "style": {"color": colors["text"]}},
-                    50: {"label": "50", "style": {"color": colors["text"]}},
-                    75: {"label": "75", "style": {"color": colors["text"]}},
-                    100: {"label": "100", "style": {"color": "#f50"}},
+                    0.25: {"label": "0.25", "style": {"color": colors["text"]}},
+                    0.5: {"label": "0.5", "style": {"color": colors["text"]}},
+                    0.75: {"label": "0.75", "style": {"color": colors["text"]}},
+                    1: {"label": "1", "style": {"color": "#f50"}},
                 },
                 "included": True,
                 "disabled": False,  # Handles can't be moved if True
@@ -209,31 +209,34 @@ class View:
             ],
         )
 
-        slider_keys = [
-            "sigma",
-            "rho_mat",
-            "rho_vac",
-            "rho_rec",
-            "nu",
-            "beta_asym",
-            "beta_sym",
-            "beta_sev",
-            "psi",
-            "epsilon",
-            "gamma_asym",
-            "gamma_sym",
-            "gamma_sev",
-            "gamma_sev_r",
-            "gamma_sev_d",
-            "mu_sym",
-            "mu_sev",
-            "tau_asym",
-            "tau_sym",
-            "tau_sev",
-        ]
+        slider_dict = {
+            "sigma": 0.5,
+            "rho_mat": 0.5,
+            "rho_vac": 0.5,
+            "rho_rec": 0.5,
+            "nu": 0.5,
+            "beta_asym": 0.5,
+            "beta_sym": 0.5,
+            "beta_sev": 0.5,
+            "psi": 0.5,
+            "epsilon": 0.5,
+            "gamma_asym": 0.5,
+            "gamma_sym": 0.5,
+            "gamma_sev": 0.5,
+            "gamma_sev_r": 0.5,
+            "gamma_sev_d": 0.5,
+            "mu_sym": 0.5,
+            "mu_sev": 0.5,
+            "tau_asym": 0.5,
+            "tau_sym": 0.5,
+            "tau_sev": 0.5,
+        }
+        params = self.model.get_params()
+        for k in slider_dict:
+            slider_dict[k] = np.round(np.median(params[k]), 4)
 
         sliders = []
-        for slider_key in slider_keys:
+        for slider_key in slider_dict:
             slider_output_id = slider_key + "_output"
             slider_id = slider_key + "_slider"
             # Text label
@@ -246,7 +249,7 @@ class View:
                 )
             )
             # Slider
-            sliders.append(build_slider({"id": slider_id}))
+            sliders.append(build_slider({"id": slider_id, "value": slider_dict[slider_key]}))
 
         slider_col_1 = html.Div(
             className="col-2 my-auto align-middle",
@@ -340,7 +343,7 @@ class View:
         )
 
         # Slider Functionality
-        for slider_key in slider_keys:
+        for slider_key in slider_dict:
             slider_output_id = slider_key + "_output"
             slider_id = slider_key + "_slider"
             exec(
