@@ -897,7 +897,7 @@ class Simulator:
         dict
             result of simulation
         """
-        t = np.linspace(0, params["t"], params["t"])
+        t = np.arange(0, params["t"], 1)
         return self._simulate_RK45(t, params)
 
     def _calc_sigma(self, t, j, k, I_sev_jk, Q_sev_jk) -> np.float64:
@@ -1052,7 +1052,7 @@ class Simulator:
 
         sol = solve_ivp(
             fun=self._build_ode_system,
-            t_span=[t[0], t[-2]],
+            t_span=[t[0], t[-1]],
             t_eval=t,
             y0=np.array(self._prepare_y0()).ravel(),
             method=method,
