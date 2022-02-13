@@ -27,7 +27,8 @@ Tweak hyperparameters to review different scenarios.
 
 ## :pray: Acknowledgments
 
-This project was part of the course "Scientific Programming in Python" at University of Hagen.
+This project was part of the course "Scientific Programming in Python" at University of Hagen. 
+The data is taken from [Robert Koch Institut](https://github.com/robert-koch-institut).
 
 ## 📝 License
 
