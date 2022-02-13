@@ -793,7 +793,7 @@ class Simulator:
 
         return np.array(res).sum(axis=0)
 
-    def _build_ode_system(self, t, params: dict) -> np.ndarray:
+    def _build_ode_system(self, t, params: np.ndarray) -> np.ndarray:
         """
         builds an ODE system for a given simulation type.
         E.g. simulation_type = "SI" -> [dSdt = ..., dIdt = ...]
@@ -802,7 +802,7 @@ class Simulator:
         ----------
         t : np.ndarray
             timesteps of simulation - is not used actively but is necessary for the call of solve_ivp
-        params : dict
+        params : np.ndarray
             parameters for the simulation
 
         Returns
