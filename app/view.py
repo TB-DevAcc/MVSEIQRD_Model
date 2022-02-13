@@ -39,12 +39,14 @@ class View:
 
         layout = {
             "title": "Simulation",
-            "xaxis_title": r"$\text{Time } t \text{ in days}$",
-            "yaxis_title": r"$\text{Number of people } n$",
+            # "xaxis_title": r"$\text{Time } t \text{ in days}$",
+            # "yaxis_title": r"$\text{Number of people } n$",
+            "xaxis_title": "Time t in days",
+            "yaxis_title": "Number of people n",
             "legend_title_text": "Classes",
         }
         if layout_dict:
-            for k, v in layout_dict:
+            for k, v in layout_dict.items():
                 layout[k] = v
 
         fig = px.line(df)
@@ -359,6 +361,8 @@ class View:
         # Button functionality
         @app.callback(Output("loading-output", "figure"), [Input("loading-button", "n_clicks")])
         def load_output(n_clicks):
+            # df = pd.DataFrame({"A": np.arange(10) * n_clicks, "B": np.arange(10) * -1 * n_clicks})
+            # return px.line(df, width=800, height=500)
             return self.plot(layout_dict={"width": 800, "height": 500})
 
         return app
