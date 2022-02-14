@@ -32,9 +32,12 @@ class View:
         Returns a plotly express figure
         """
         if not params:
-            params = self.model.get_params()
+            classes = self.model.controller.classes_keys
+            shape_params = self.model.get_params(["t", "J", "K"])
+            t, J, K = shape_params["t"], shape_params["J"], shape_params["K"]
+            params = self.model.controller.classes_data.reshape((len(classes), t, J, K))
+            params = dict(zip(classes, params))
 
-        classes = self.model.translate_simulation_type()
         params = {k: np.sum(v, axis=(1, 2)) for k, v in params.items() if k in classes}
         df = pd.DataFrame(params)
 
@@ -373,8 +376,7 @@ class View:
         # Button functionality
         @app.callback(Output("loading-output", "figure"), [Input("loading-button", "n_clicks")])
         def load_output(n_clicks):
-            # df = pd.DataFrame({"A": np.arange(10) * n_clicks, "B": np.arange(10) * -1 * n_clicks})
-            # return px.line(df, width=800, height=500)
+            self.model.run()
             return self.plot(layout_dict={"width": 800, "height": 500})
 
         return app
