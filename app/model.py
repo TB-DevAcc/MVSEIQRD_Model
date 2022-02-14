@@ -47,13 +47,6 @@ class Model:
         #
         # self.controller.set_params(params, False)
 
-    def _update_view(self, params) -> None:
-        """
-        Updates the view if new data is available
-        """
-        # TODO implement
-        ...
-
     def detect_simulation_type(self, params: dict) -> str:
         """
         Detects from a dict of parameters which epidemiological simulation can be run.
@@ -281,8 +274,6 @@ class Model:
         self.controller.update(params=retParams, fill_missing_values=True, reset=False)
         params = self.controller.get_params()
 
-        # update the view
-        self._update_view(params)
         return params
 
     def run_app(self):
