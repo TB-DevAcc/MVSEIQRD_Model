@@ -306,20 +306,20 @@ class Controller:
         self.hyper_data = None  # [(0,)]
         self.misc_keys = None
         self.misc_data = None  # [(1,)]
-        self.update_shape_data(t, J, K)
-
-        # Data for direct use for the simulator (with usually solve_ivp)
-        self.sim_data = None  # set in initialize_parameters() or manually with _create_sim_data()
+        self.update_shape_data(self._params, t, J, K, init=True)
 
     def update(self, params, fill_missing_values, reset=False) -> None:
         """
         Updates the controller to the latest parameters. 
         Wrapper around update_params and update_shape_data.
         """
-        self.update_params(params, fill_missing_values, reset=reset)
+        # Last values
+        last_params = {k: [v.ravel()[-1]] for k, v in params.items()}
+        self.update_params(last_params, fill_missing_values, reset=reset)
+
+        # Full values over time
         t, J, K = self._params["t"], self._params["J"], self._params["K"]
-        # FIXME broken after init because Data is already in the long format
-        # self.update_shape_data(t, J, K)
+        self.update_shape_data(params=params, t=t, J=J, K=K)
 
     def update_params(self, params, fill_missing_values, reset=False) -> None:
         """
@@ -335,19 +335,49 @@ class Controller:
             self.initialize_parameters(params)
         else:
             # add given params to already existing parameter dict
-            self.check_params(params)
             self.set_params(params)
 
-    def update_shape_data(self, t, J, K):
-        shape_data_dict = self.broadcast_params_into_shape()
-        # shapes taken from PARAM_SHAPE
-        self.classes_data = shape_data_dict[(J, K)]
-        self.greeks_data = shape_data_dict[(t, J, K)]
-        self.special_greeks_data = shape_data_dict[(t, J, K, K)]
-        self.hyper_data = shape_data_dict[(0,)]
-        self.misc_data = shape_data_dict[(1,)]
+    def update_shape_data(self, params, t, J, K, init=False):
 
-    def broadcast_params_into_shape(self, params: dict = None, params_shapes: dict = None) -> dict:
+        # Only for the first run from __init__
+        if init:
+            shape_data_dict = self.broadcast_params_into_shape()
+            # shapes taken from PARAM_SHAPE
+            self.classes_data = shape_data_dict[(J, K)]
+            self.greeks_data = shape_data_dict[(t, J, K)]
+            self.special_greeks_data = shape_data_dict[(t, J, K, K)]
+            self.hyper_data = shape_data_dict[(0,)]
+            self.misc_data = shape_data_dict[(1,)]
+        else:
+            self.classes_data = self.broadcast_params_into_shape(
+                params=params,
+                params_shapes={
+                    "M": (t, J, K),
+                    "V": (t, J, K),
+                    "R": (t, J, K),
+                    "S": (t, J, K),
+                    "E": (t, J, K),
+                    "E_tr": (t, J, K),
+                    "E_nt": (t, J, K),
+                    "I": (t, J, K),
+                    "I_asym": (t, J, K),
+                    "I_sym": (t, J, K),
+                    "I_sev": (t, J, K),
+                    "Q": (t, J, K),
+                    "Q_asym": (t, J, K),
+                    "Q_sym": (t, J, K),
+                    "Q_sev": (t, J, K),
+                    "D": (t, J, K),
+                },
+                t=t,
+                J=J,
+                K=K,
+            )[(t, J, K)]
+            self.classes_keys = params.keys()
+
+    def broadcast_params_into_shape(
+        self, params: dict = None, params_shapes: dict = None, t=None, J=None, K=None
+    ) -> dict:
         """
         Creates a 1D np.array for every unique shape in params_shapes. 
         E.g. all params with shape (J, K) are converted to an array with 
@@ -391,7 +421,8 @@ class Controller:
             ]
 
             # Save key lists to check order later if necessary
-            t, J, K = params["t"], params["J"], params["K"]
+            if t == None or J == None or K == None:
+                t, J, K = params["t"], params["J"], params["K"]
             if shape == (J, K):
                 self.classes_keys = keys_with_shape
             elif shape == (t, J, K):
@@ -412,7 +443,12 @@ class Controller:
             for i in range(len(keys_with_shape)):
                 left = reduce(lambda x, y: x * y, [i] + list(shape))
                 right = reduce(lambda x, y: x * y, [i + 1] + list(shape))
-                shape_data[left:right] = (np.ones(shape) * params[keys_with_shape[i]]).ravel()
+                # Already in correct shape
+                param = np.array(params[keys_with_shape[i]])
+                if param.shape == shape:
+                    shape_data[left:right] = param.ravel()
+                else:
+                    shape_data[left:right] = (np.ones(shape) * param).ravel()
 
             out_dict[shape] = shape_data
 
@@ -597,9 +633,11 @@ class Controller:
                 value of class attribute described by key
         """
         for key in params:
-            self._params[key] = params[key]
+            # Consider shape of parameter and set new values to uniformally distributed value
+            # TODO find a more accurate extrapolation method to conserve relations in the param
+            target_len = len(self._params[key])
+            self._params[key] = [params[key] for i in range(target_len)]
         self.check_params(self._params)
-        self.sim_data = self._create_sim_data()
 
     def get_params(self, keys: list = None) -> dict:
         """

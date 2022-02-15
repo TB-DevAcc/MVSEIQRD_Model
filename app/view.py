@@ -1,4 +1,5 @@
 import base64
+from glob import glob
 from pathlib import Path
 
 import dash_bootstrap_components as dbc
@@ -31,20 +32,27 @@ class View:
         Returns a plotly express figure
         """
         if not params:
-            params = self.model.get_params()
+            classes = self.model.controller.classes_keys
+            shape_params = self.model.get_params(["t", "J", "K"])
+            t, J, K = shape_params["t"], shape_params["J"], shape_params["K"]
+            params = self.model.controller.classes_data.reshape((len(classes), t, J, K))
+            params = dict(zip(classes, params))
 
-        classes = self.model.translate_simulation_type()
         params = {k: np.sum(v, axis=(1, 2)) for k, v in params.items() if k in classes}
         df = pd.DataFrame(params)
 
         layout = {
             "title": "Simulation",
-            "xaxis_title": r"$\text{Time } t \text{ in days}$",
-            "yaxis_title": r"$\text{Number of people } n$",
+            # "xaxis_title": r"$\text{Time } t \text{ in days}$",
+            # "yaxis_title": r"$\text{Number of people } n$",
+            "xaxis_title": "Time t in days",
+            "yaxis_title": "Number of people n",
             "legend_title_text": "Classes",
+            "plot_bgcolor": "rgba(255, 255, 255, 0.1)",
+            "paper_bgcolor": "rgba(0, 0, 0, 0)",
         }
         if layout_dict:
-            for k, v in layout_dict:
+            for k, v in layout_dict.items():
                 layout[k] = v
 
         fig = px.line(df)
@@ -166,15 +174,15 @@ class View:
             """
             sliderparams = {
                 "min": 0,
-                "max": 100,
-                "value": 65,
-                "step": 5.0,
+                "max": 1,
+                "value": 0.65,
+                "step": 0.05,
                 "marks": {
                     0: {"label": "0", "style": {"color": "#0b4f6c"}},
-                    25: {"label": "25", "style": {"color": colors["text"]}},
-                    50: {"label": "50", "style": {"color": colors["text"]}},
-                    75: {"label": "75", "style": {"color": colors["text"]}},
-                    100: {"label": "100", "style": {"color": "#f50"}},
+                    0.25: {"label": "0.25", "style": {"color": colors["text"]}},
+                    0.5: {"label": "0.5", "style": {"color": colors["text"]}},
+                    0.75: {"label": "0.75", "style": {"color": colors["text"]}},
+                    1: {"label": "1", "style": {"color": "#f50"}},
                 },
                 "included": True,
                 "disabled": False,  # Handles can't be moved if True
@@ -190,7 +198,7 @@ class View:
         app = JupyterDash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP],)
 
         colors = {
-            "background": "#7a9e7e",
+            "background": "#577590",
             "text": "#7FDBFF",
         }
 
@@ -205,31 +213,34 @@ class View:
             ],
         )
 
-        slider_keys = [
-            "sigma",
-            "rho_mat",
-            "rho_vac",
-            "rho_rec",
-            "nu",
-            "beta_asym",
-            "beta_sym",
-            "beta_sev",
-            "psi",
-            "epsilon",
-            "gamma_asym",
-            "gamma_sym",
-            "gamma_sev",
-            "gamma_sev_r",
-            "gamma_sev_d",
-            "mu_sym",
-            "mu_sev",
-            "tau_asym",
-            "tau_sym",
-            "tau_sev",
-        ]
+        slider_dict = {
+            "sigma": 0.5,
+            "rho_mat": 0.5,
+            "rho_vac": 0.5,
+            "rho_rec": 0.5,
+            "nu": 0.5,
+            "beta_asym": 0.5,
+            "beta_sym": 0.5,
+            "beta_sev": 0.5,
+            "psi": 0.5,
+            "epsilon": 0.5,
+            "gamma_asym": 0.5,
+            "gamma_sym": 0.5,
+            "gamma_sev": 0.5,
+            "gamma_sev_r": 0.5,
+            "gamma_sev_d": 0.5,
+            "mu_sym": 0.5,
+            "mu_sev": 0.5,
+            "tau_asym": 0.5,
+            "tau_sym": 0.5,
+            "tau_sev": 0.5,
+        }
+        params = self.model.get_params()
+        for k in slider_dict:
+            slider_dict[k] = np.round(np.median(params[k]), 4)
 
         sliders = []
-        for slider_key in slider_keys:
+        for slider_key in slider_dict:
             slider_output_id = slider_key + "_output"
             slider_id = slider_key + "_slider"
             # Text label
@@ -242,7 +253,7 @@ class View:
                 )
             )
             # Slider
-            sliders.append(build_slider({"id": slider_id}))
+            sliders.append(build_slider({"id": slider_id, "value": slider_dict[slider_key]}))
 
         slider_col_1 = html.Div(
             className="col-2 my-auto align-middle",
@@ -335,8 +346,11 @@ class View:
             children=[header, main_row, footer,],
         )
 
+        # HACK could be done a lot cleaner...
+        global update_params
+        update_params = self.model.controller.update_params
         # Slider Functionality
-        for slider_key in slider_keys:
+        for slider_key in slider_dict:
             slider_output_id = slider_key + "_output"
             slider_id = slider_key + "_slider"
             exec(
@@ -348,7 +362,10 @@ class View:
                 + "def "
                 + "update_output_"
                 + slider_key
-                + "(value):"
+                + "(value):\n\t"
+                + "update_params(params={'"
+                + slider_key
+                + "':value}, fill_missing_values=False, reset=False)\n\t"
                 + "return "
                 + "'"
                 + slider_key
@@ -359,11 +376,12 @@ class View:
         # Button functionality
         @app.callback(Output("loading-output", "figure"), [Input("loading-button", "n_clicks")])
         def load_output(n_clicks):
+            self.model.run()
             return self.plot(layout_dict={"width": 800, "height": 500})
 
         return app
 
     def run_app(self):
         """Run app and display result inline in the notebook"""
-        return self.app.run_server(mode="inline", width="1400", height="880")
+        return self.app.run_server(mode="inline", width="1600", height="880")
 
