@@ -215,7 +215,11 @@ class DataHandler:
             initial_values[key]["N_total"] = initial_values[key].pop("Insgesamt")
             initial_values[key]["B"] = initial_values[key].pop("Krankenhausbetten")
             initial_values[key]["N"] = np.array(
-                [value2 for key2, value2 in value.items() if key2 not in ["N_total", "B"]]
+                [
+                    value2
+                    for key2, value2 in value.items()
+                    if key2 not in ["N_total", "B"]
+                ]
             )
             initial_values[key] = {
                 key2: initial_values[key][key2]
@@ -343,7 +347,7 @@ class DataHandler:
 
     def prepare_simulated_covid_data(self, model, covid_data: dict, mode: str = "I") -> Tuple:
         """
-        Prepares a dataframe to use in MyFuncAnimator from simulation results
+        Creates a dataframe for usage in MyFuncAnimator from simulation results
 
         Parameters
         ----------
@@ -362,31 +366,44 @@ class DataHandler:
         select_classes = []
         if mode == "I":
             if "I3" in sim_type:
-                select_classes = ['I_asym', 'I_sym', 'I_sev']
+                select_classes = ["I_asym", "I_sym", "I_sev"]
             elif "I" in sim_type:
-                select_classes = ['I']
+                select_classes = ["I"]
         elif mode == "E":
             if "E2" in sim_type:
-                select_classes = ['E_tr', 'E_nt']
+                select_classes = ["E_tr", "E_nt"]
             if "E" in sim_type:
-                select_classes = ['E']
+                select_classes = ["E"]
         elif mode == "V" and "V" in sim_type:
-            select_classes = ['V']
+            select_classes = ["V"]
+        else:
+            print("Given mode is not correct, using fallback...")
+            select_classes = ["I"]
 
         data = np.sum([covid_data[classes] for classes in select_classes], axis=(0))
         data_frame = pd.DataFrame(np.sum(data, axis=(2)))
 
         map_params = model.controller.map_params
         data_frame.rename(columns=map_params, inplace=True)
-        data_frame = data_frame.assign(Meldedatum=pd.date_range('2021-01-01', periods=365))
-        data_frame = pd.melt(data_frame, id_vars=['Meldedatum'], value_vars=map_params.values())
-        data_frame.rename(columns={'variable': 'RS', 'value': 'AnzahlFall'}, inplace=True)
-        data_frame['Meldedatum'] = data_frame['Meldedatum'].astype('str')
-        data_frame = data_frame.assign(Bundesland='')
-        dates = data_frame[data_frame['RS'] == '01001']['Meldedatum']
+        data_frame = data_frame.assign(
+            Meldedatum=pd.date_range("2021-01-01", periods=365)
+        )
+        data_frame = pd.melt(
+            data_frame, id_vars=["Meldedatum"], value_vars=map_params.values()
+        )
+        data_frame.rename(
+            columns={"variable": "RS", "value": "AnzahlFall"}, inplace=True
+        )
+        data_frame["Meldedatum"] = data_frame["Meldedatum"].astype("str")
+        data_frame = data_frame.assign(Bundesland="")
+        # disable two districts causing problems with geopandas
+        data_frame = data_frame[~data_frame["RS"].isin(['11000', '16056'])]
+        dates = data_frame[data_frame["RS"] == "01001"]["Meldedatum"]
 
         geo = self.get_district_geometries()
-        geo = pd.concat([geo[geo['RS'] == district] for district in map_params.values()])
+        geo = pd.concat(
+            [geo[geo["RS"] == district] for district in map_params.values()]
+        )
 
         return data_frame, geo, dates
 

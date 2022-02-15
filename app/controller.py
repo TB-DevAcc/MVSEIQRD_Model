@@ -360,9 +360,6 @@ class Controller:
                         self.map_params[i] = f"{key}"
 
             self._params["N"] = np.array(temp_params["N"], dtype=np.float64)
-            self._params["I_asym"] = self._params["N"] * 0.002
-            self._params["I_sym"] = self._params["N"] * 0.0002
-            self._params["I_sev"] = self._params["N"] * 0.00002
             self._params["Beds"] = np.array(temp_params["Beds"], dtype=np.float64)
             self._params["S"] = self._params["N"] - self._params["I_asym"] - self._params["I_sym"] - self._params["I_sev"]
 
