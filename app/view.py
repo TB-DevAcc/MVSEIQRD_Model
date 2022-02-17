@@ -1,5 +1,4 @@
 import base64
-from glob import glob
 from pathlib import Path
 
 import dash_bootstrap_components as dbc
@@ -8,11 +7,17 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+from plotly.graph_objs import Line
+from plotly.graph_objs.scatter.marker import Line
+from plotly.subplots import make_subplots
 import pydot
 from dash import dcc, html
 from dash.dependencies import Input, Output, State
 from jupyter_dash import JupyterDash
 from pyvis.network import Network
+
+
+
 
 
 class View:
@@ -61,6 +66,27 @@ class View:
         if show:
             fig.show()
         return fig
+
+    def real_seir_plot(self, parameters):
+
+        """
+        Plots the course of the parameter development over time.
+
+        Returns a plotly express figure
+        """
+
+        fig = go.Figure()
+        fig = make_subplots(specs=[[{"secondary_y": True}]])
+        dates = list(parameters["AnzahlFall"].keys())
+        for key, values in parameters.items():
+            if key != "AnzahlAnfälligen":
+                fig.add_trace(go.Line(x=dates, y=parameters[key], name=key))
+            else:
+                fig.add_trace(go.Line(x=dates, y=parameters[key], name=key), secondary_y=True, )
+
+        fig.update_yaxes(range=[0, 83240000], secondary_y=True)
+        return fig.show()
+
 
     def _create_network_iframe(
         self,
