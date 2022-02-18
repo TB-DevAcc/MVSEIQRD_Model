@@ -228,7 +228,7 @@ class Controller:
             "J": (0,),
             "t": (0,),
             "basic_reprod_num": (t, J, K),
-            "Beds": (1,),
+            "Beds": (J,),
             "beta_asym": (t, J, K, K),
             "beta_sym": (t, J, K, K),
             "beta_sev": (t, J, K, K),
@@ -348,7 +348,7 @@ class Controller:
             self.greeks_data = shape_data_dict[(t, J, K)]
             self.special_greeks_data = shape_data_dict[(t, J, K, K)]
             self.hyper_data = shape_data_dict[(0,)]
-            self.misc_data = shape_data_dict[(1,)]
+            self.misc_data = shape_data_dict[(J,)]
         else:
             self.classes_data = self.broadcast_params_into_shape(
                 params=params,
@@ -432,7 +432,7 @@ class Controller:
                 self.special_greeks_keys = keys_with_shape
             elif shape == (0,):
                 self.hyper_keys = keys_with_shape
-            elif shape == (1,):
+            elif shape == (J,):
                 self.misc_keys = keys_with_shape
 
             # final shape of the output array, that can be
