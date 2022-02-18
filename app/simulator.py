@@ -1047,7 +1047,7 @@ class Simulator:
                              "I", "I_asym", "I_sym", "I_sev", "Q", "Q_asym", "Q_sym", "Q_sev",
                              "D"]:
                     self.params[key] = np.ones((self.J, self.K)) * np.array(params[key])
-                elif key not in ["K", "J", "N", "Beds"]:
+                elif key not in ["K", "J", "N", "t", "Beds"]:
                     self.params[key] = np.ones((len(t), self.J, self.K)) * np.array(params[key])
 
         sol = solve_ivp(
