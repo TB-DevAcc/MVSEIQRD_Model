@@ -199,9 +199,10 @@ class Controller:
         }
         self.default_values = self._load_json(default_values_path)
         self.default_domains = self._load_json(default_domains_path)
+        self.map_params = {}
         self.data_handler = DataHandler()
 
-        self.update_params(params, fill_missing_values, reset=True)
+        self.update_params(params, fill_missing_values, reset=True, load_base_data=True)
 
         t, J, K = self._params["t"], self._params["J"], self._params["K"]
 
@@ -308,20 +309,20 @@ class Controller:
         self.misc_data = None  # [(1,)]
         self.update_shape_data(self._params, t, J, K, init=True)
 
-    def update(self, params, fill_missing_values, reset=False) -> None:
+    def update(self, params, fill_missing_values, reset=False, load_base_data=False) -> None:
         """
         Updates the controller to the latest parameters. 
         Wrapper around update_params and update_shape_data.
         """
         # Last values
         last_params = {k: [v.ravel()[-1]] for k, v in params.items()}
-        self.update_params(last_params, fill_missing_values, reset=reset)
+        self.update_params(last_params, fill_missing_values, reset=reset, load_base_data=load_base_data)
 
         # Full values over time
         t, J, K = self._params["t"], self._params["J"], self._params["K"]
         self.update_shape_data(params=params, t=t, J=J, K=K)
 
-    def update_params(self, params, fill_missing_values, reset=False) -> None:
+    def update_params(self, params, fill_missing_values, reset=False, load_base_data=False) -> None:
         """
         Updates the controller if new data/parameters is/are available. 
         Sets self._params to current parameter dict.
@@ -332,7 +333,7 @@ class Controller:
         if fill_missing_values:
             # build complete parameter set with controller
             # add default values to given params dict
-            self.initialize_parameters(params)
+            self.initialize_parameters(params, load_base_data)
         else:
             # add given params to already existing parameter dict
             self.set_params(params)
@@ -604,16 +605,25 @@ class Controller:
             else:
                 self._params[key] = val
 
-        # TODO load data from DataHandler and put them into params
         if load_base_data:
             base_data = self.data_handler.get_simulation_initial_values()
             if len(base_data) > 0:
-                self._params["N"], self._params["Beds"] = [], []
-                map_params = {}
+                temp_params = {"N": [], "Beds": []}
                 for i, (key, value) in enumerate(base_data.items()):
-                    self._params["N"].append(value["N"])
-                    self._params["Beds"].append(value["B"])
-                    map_params[f"{i}"] = key
+                    temp_params["N"].append(value["N"])
+                    temp_params["Beds"].append(value["B"])
+                    if key < 10000:
+                        self.map_params[i] = f"0{key}"
+                    else:
+                        self.map_params[i] = f"{key}"
+
+            # TODO
+            self._params["N"] = np.array(temp_params["N"], dtype=np.float64)
+            self._params["Beds"] = np.array(temp_params["Beds"], dtype=np.float64)
+            self._params["I_asym"] = self._params["N"] * 0.002
+            self._params["I_sym"] = self._params["N"] * 0.0002
+            self._params["I_sev"] = self._params["N"] * 0.00002
+            self._params["S"] = self._params["N"] - self._params["I_asym"] - self._params["I_sym"] - self._params["I_sev"]
 
         # make sure types are clear first under valid_domain and then initialize within bounds
         self.check_params(self._params)
