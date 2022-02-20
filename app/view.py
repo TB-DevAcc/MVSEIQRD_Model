@@ -163,6 +163,11 @@ class View:
         else:
             return network_svg_path
 
+    def _png_to_b64_img(self, path=Path("assets/network.svg"),) -> str:
+        with open(path, "rb") as imageFile:
+            b64 = str(base64.b64encode(imageFile.read()))[2:-1]
+        return "data:image/png;base64," + b64
+
     def _build_app(self):
         """
         returns Jupyter-Dash Webapp
@@ -243,10 +248,11 @@ class View:
         for slider_key in slider_dict:
             slider_output_id = slider_key + "_output"
             slider_id = slider_key + "_slider"
+            slider_png = "assets/" + slider_key + ".png"
             # Text label
             sliders.append(
                 html.P(
-                    children=slider_key,
+                    children=html.Img(src=self._png_to_b64_img(slider_png)),
                     className="mt-2 mb-0 ms-3",
                     style={"text-align": "left",},
                     id=slider_output_id,
@@ -367,10 +373,12 @@ class View:
                 + slider_key
                 + "':value}, fill_missing_values=False, reset=False)\n\t"
                 + "return "
-                + "'"
+                # + "'"
+                + "html.Img(src=self._png_to_b64_img(assets/"
                 + slider_key
-                + "'"
-                + " + f' = {value}'"
+                + ".png))"
+                # + "'"
+                # + " + f' = {value}'"
             )
 
         # Button functionality
