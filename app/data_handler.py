@@ -1,4 +1,5 @@
 import geopandas as gpd
+import os.path
 import numpy as np
 import pandas as pd
 from typing import Tuple
@@ -19,8 +20,15 @@ class DataHandler:
         self.default_initial_data = self._load_simulation_initial_values(
             default_age_group_data_path, default_hospital_beds_data_path
         )
-        self.recorded_cases = self._load_recorded_covid_cases(default_recorded_covid_cases_path)
-        self.district_geometries = self._load_district_geometries(default_districts_geometry_path)
+        if os.path.isfile(default_recorded_covid_cases_path):
+            self.recorded_cases = self._load_recorded_covid_cases(default_recorded_covid_cases_path)
+        else:
+            print(f"No file at {default_recorded_covid_cases_path}! Loading recorded cases was skipped.")
+
+        if os.path.isfile(default_districts_geometry_path):
+            self.district_geometries = self._load_district_geometries(default_districts_geometry_path)
+        else:
+            print(f"No file at {default_districts_geometry_path}! Loading geometry data was skipped.")
 
     def _load_simulation_initial_values(
         self, age_group_data_path, hospital_beds_data_path
