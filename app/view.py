@@ -7,8 +7,6 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from plotly.graph_objs import Line
-from plotly.graph_objs.scatter.marker import Line
 from plotly.subplots import make_subplots
 import pydot
 from dash import dcc, html
@@ -35,58 +33,43 @@ class View:
         Plots the course of the parameter development over time.
 
         Returns a plotly express figure
+
         """
-        if not params:
-            classes = self.model.controller.classes_keys
-            shape_params = self.model.get_params(["t", "J", "K"])
-            t, J, K = shape_params["t"], shape_params["J"], shape_params["K"]
-            params = self.model.controller.classes_data.reshape((len(classes), t, J, K))
-            params = dict(zip(classes, params))
 
-        params = {k: np.sum(v, axis=(1, 2)) for k, v in params.items() if k in classes}
-        df = pd.DataFrame(params)
+        if "AnzahlFall" in params:
+            fig = go.Figure()
+            fig = make_subplots(specs=[[{"secondary_y": True}]])
+            dates = list(params["AnzahlFall"].keys())
+            for key, values in params.items():
+                if key != "AnzahlAnfälligen":
+                    fig.add_trace(go.Line(x=dates, y=params[key], name=key))
+                else:
+                    fig.add_trace(go.Line(x=dates, y=params[key], name=key), secondary_y=True, )
+            fig.update_yaxes(range=[0, 83240000], secondary_y=True)
+        else:
+            if not params:
+                params = self.model.get_params()
 
-        layout = {
-            "title": "Simulation",
-            # "xaxis_title": r"$\text{Time } t \text{ in days}$",
-            # "yaxis_title": r"$\text{Number of people } n$",
-            "xaxis_title": "Time t in days",
-            "yaxis_title": "Number of people n",
-            "legend_title_text": "Classes",
-            "plot_bgcolor": "rgba(255, 255, 255, 0.1)",
-            "paper_bgcolor": "rgba(0, 0, 0, 0)",
-        }
-        if layout_dict:
-            for k, v in layout_dict.items():
-                layout[k] = v
+            classes = self.model.translate_simulation_type()
+            params = {k: np.sum(v, axis=(1, 2)) for k, v in params.items() if k in classes}
+            df = pd.DataFrame(params)
 
-        fig = px.line(df)
-        fig.update_layout(go.Layout(layout))
+            layout = {
+                "title": "Simulation",
+                "xaxis_title": r"$\text{Time } t \text{ in days}$",
+                "yaxis_title": r"$\text{Number of people } n$",
+                "legend_title_text": "Classes",
+            }
+            if layout_dict:
+                for k, v in layout_dict:
+                    layout[k] = v
+
+            fig = px.line(df)
+            fig.update_layout(go.Layout(layout))
 
         if show:
             fig.show()
         return fig
-
-    def real_seir_plot(self, parameters):
-
-        """
-        Plots the course of the parameter development over time.
-
-        Returns a plotly express figure
-        """
-
-        fig = go.Figure()
-        fig = make_subplots(specs=[[{"secondary_y": True}]])
-        dates = list(parameters["AnzahlFall"].keys())
-        for key, values in parameters.items():
-            if key != "AnzahlAnfälligen":
-                fig.add_trace(go.Line(x=dates, y=parameters[key], name=key))
-            else:
-                fig.add_trace(go.Line(x=dates, y=parameters[key], name=key), secondary_y=True, )
-
-        fig.update_yaxes(range=[0, 83240000], secondary_y=True)
-        return fig.show()
-
 
     def _create_network_iframe(
         self,
