@@ -349,6 +349,18 @@ class Controller:
             self.special_greeks_data = shape_data_dict[(t, J, K, K)]
             self.hyper_data = shape_data_dict[(0,)]
             self.misc_data = shape_data_dict[(J,)]
+
+            # TODO rename
+            class_data = self.classes_data.reshape((len(self.classes_keys), J, K))
+            tmp = {key: class_data[i] for i, key in enumerate(self.classes_keys)}
+
+            greeks_data = self.greeks_data.reshape((len(self.greeks_keys), t, J, K))
+            tmp.update({key: greeks_data[i] for i, key in enumerate(self.greeks_keys)})
+
+            spec_greeks_data = self.special_greeks_data.reshape((len(self.special_greeks_keys), t, J, K, K))
+            tmp.update({key: spec_greeks_data[i] for i, key in enumerate(self.special_greeks_keys)})
+
+            self.update_params(params=tmp, fill_missing_values=False)
         else:
             self.classes_data = self.broadcast_params_into_shape(
                 params=params,
@@ -504,7 +516,11 @@ class Controller:
         if len(domain) == 2:
             if type(value) == np.ndarray:
                 for val in value:
-                    if domain[0] > val or val > domain[1]:
+                    if type(val) == np.ndarray:
+                        for v in val:
+                            if domain[0] > v or v > domain[1]:
+                                return False
+                    elif domain[0] > val or val > domain[1]:
                         return False
                 return True
             else:
@@ -646,7 +662,7 @@ class Controller:
             # Consider shape of parameter and set new values to uniformally distributed value
             # TODO find a more accurate extrapolation method to conserve relations in the param
             target_len = len(self._params[key])
-            self._params[key] = [params[key] for i in range(target_len)]
+            self._params[key] = np.array(params[key]) #for i in range(target_len)])
         self.check_params(self._params)
 
     def get_params(self, keys: list = None) -> dict:
