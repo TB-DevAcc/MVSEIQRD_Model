@@ -14,7 +14,7 @@ class DataHandler:
         default_age_group_data_path="data/simulation_test/altersgruppen.csv",
         default_hospital_beds_data_path="data/simulation_test/krankenhausbetten.csv",
         default_recorded_covid_cases_path="data/RKI_COVID19.csv",
-        default_districts_geometry_path="data/RKI_Corona_Landkreise.shp",
+        default_districts_geometry_path="data/RKI_Corona_Landkreise.geojson",
     ):
         self.default_initial_data = self._load_simulation_initial_values(
             default_age_group_data_path, default_hospital_beds_data_path
@@ -192,6 +192,77 @@ class DataHandler:
             }
 
         return initial_values
+
+    def real_seir(self, df, vac_df):
+        """
+        Return dictionary as real seir model
+
+        Parameters
+        ----------
+        df : df as covid_df
+
+        Returns
+        -------
+        dict : parameters of real seir
+        """
+
+
+
+        c_df = df[["Meldedatum", "AnzahlFall", "AnzahlTodesfall", "NeuGenesen"]]
+        c_df = c_df.groupby("Meldedatum").sum().abs().reset_index()
+        c_df['Meldedatum'] = pd.to_datetime(c_df['Meldedatum'], format="%Y/%m/%d")
+        vac_df.rename(columns={"Impfdatum": "Meldedatum"}, inplace=True)
+        vac_df.rename(columns={"Anzahl": "AnzahlImpfungen"}, inplace=True)
+        indexNames1 = vac_df[vac_df['Impfschutz'] == 1].index
+        indexNames3 = vac_df[vac_df['Impfschutz'] == 3].index
+        # Delete these rows indexes from dataFrame
+        vac_df.drop(indexNames1, inplace=True)
+        vac_df.drop(indexNames3, inplace=True)
+
+        vac_df = vac_df[["Meldedatum", "AnzahlImpfungen"]]
+        vac_df = vac_df.groupby(by="Meldedatum").sum().reset_index()
+        vac_df['Meldedatum'] = pd.to_datetime(vac_df['Meldedatum'], format="%Y/%m/%d")
+        # merge covid_df and vac_df
+        sird = pd.merge(
+            left=c_df,
+            right=vac_df,
+            on="Meldedatum",
+            how="outer"
+        ).fillna(0)
+
+        sum_sird = sird.sum(axis=1)
+        N = 83240000
+        s = []
+        date = c_df["Meldedatum"].tolist()
+        for i in sum_sird:
+            s += [N - i]
+            N -= i
+        s_df = pd.DataFrame(list(zip(date, s)), columns=['Meldedatum', 'AnzahlAnfälligen'])
+        # merge with S = susceptible
+        sird = pd.merge(
+            left=sird,
+            right=s_df,
+            on="Meldedatum",
+            how="outer"
+        ).fillna(0)
+        params = sird.copy()
+        params = params.set_index("Meldedatum")
+        param = {}
+        for key, values in params.items():
+            param[key] = values
+
+        return param
+
+
+
+
+
+
+
+
+
+
+
 
     def _load_recorded_covid_cases(self, recorded_covid_cases_path) -> pd.DataFrame:
         """

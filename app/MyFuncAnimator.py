@@ -96,6 +96,7 @@ class MyFuncAnimator:
     
     
     def animate(self, n):
+        self.ax.clear()
         self.pbar.update(1)
         self.ax.set_title("New cases of COVID-19 on {}".format(self.date_lst[n].split()[0]), fontdict={"fontsize": "25", "fontweight" : "3"})
         self.ax.set_facecolor("lightblue")
