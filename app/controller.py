@@ -80,6 +80,7 @@ class Controller:
         model,
         params: dict = None,
         fill_missing_values: bool = True,
+        load_base_parameter: bool = True,
         default_values_path="data/default_values.json",
         default_domains_path="data/default_domains.json",
     ):
@@ -202,7 +203,10 @@ class Controller:
         self.map_params = {}
         self.data_handler = DataHandler()
 
-        self.update_params(params, fill_missing_values, reset=True, load_base_data=True)
+        self.update_params(params, fill_missing_values, reset=True)
+
+        if load_base_parameter:
+            self._load_base_parameter()
 
         t, J, K = self._params["t"], self._params["J"], self._params["K"]
 
@@ -322,7 +326,7 @@ class Controller:
         t, J, K = self._params["t"], self._params["J"], self._params["K"]
         self.update_shape_data(params=params, t=t, J=J, K=K)
 
-    def update_params(self, params, fill_missing_values, reset=False, load_base_data=False) -> None:
+    def update_params(self, params, fill_missing_values, reset=False) -> None:
         """
         Updates the controller if new data/parameters is/are available. 
         Sets self._params to current parameter dict.
@@ -333,7 +337,7 @@ class Controller:
         if fill_missing_values:
             # build complete parameter set with controller
             # add default values to given params dict
-            self.initialize_parameters(params, load_base_data)
+            self.initialize_parameters(params)
         else:
             # add given params to already existing parameter dict
             self.set_params(params)
@@ -617,30 +621,31 @@ class Controller:
             else:
                 self._params[key] = val
 
-        if load_base_data:
-            base_data = self.data_handler.get_simulation_initial_values()
-            if len(base_data) > 0:
-                temp_params = {"N": [], "Beds": []}
-                for i, (key, value) in enumerate(base_data.items()):
-                    temp_params["N"].append(value["N"])
-                    temp_params["Beds"].append(value["B"])
-                    if key < 10000:
-                        self.map_params[i] = f"0{key}"
-                    else:
-                        self.map_params[i] = f"{key}"
-
-            # TODO
-            self._params["N"] = np.array(temp_params["N"], dtype=np.float64)
-            self._params["Beds"] = np.array(temp_params["Beds"], dtype=np.float64)
-            self._params["I_asym"] = self._params["N"] * 0.002
-            self._params["I_sym"] = self._params["N"] * 0.0002
-            self._params["I_sev"] = self._params["N"] * 0.00002
-            self._params["S"] = self._params["N"] - self._params["I_asym"] - self._params["I_sym"] - self._params["I_sev"]
-
         # make sure types are clear first under valid_domain and then initialize within bounds
         self.check_params(self._params)
 
         return self._params
+
+    def _load_base_parameter(self):
+        base_data = self.data_handler.get_simulation_initial_values(number_of_districts=self._params["J"])
+        if len(base_data) > 0:
+            temp_params = {"N": [], "Beds": []}
+            for i, (key, value) in enumerate(base_data.items()):
+                temp_params["N"].append(value["N"])
+                temp_params["Beds"].append(value["B"])
+                if 10000 > key > 0:
+                    self.map_params[i] = f"0{key}"
+                else:
+                    self.map_params[i] = f"{key}"
+
+        self._params["N"] = np.array(temp_params["N"], dtype=np.float64)
+        self._params["Beds"] = np.array(temp_params["Beds"], dtype=np.float64)
+        # TODO
+        self._params["I_asym"] = self._params["N"] * 0.002
+        self._params["I_sym"] = self._params["N"] * 0.0002
+        self._params["I_sev"] = self._params["N"] * 0.0002
+        self._params["S"] = self._params["N"] - self._params["I_asym"] - self._params["I_sym"] - \
+                            self._params["I_sev"]
 
     def set_params(self, params: dict) -> None:
         """
