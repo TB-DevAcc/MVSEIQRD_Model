@@ -515,12 +515,8 @@ class Controller:
 
         if len(domain) == 2:
             if type(value) == np.ndarray:
-                for val in value:
-                    if type(val) == np.ndarray:
-                        for v in val:
-                            if domain[0] > v or v > domain[1]:
-                                return False
-                    elif domain[0] > val or val > domain[1]:
+                for val in value.ravel():
+                    if domain[0] > val or val > domain[1]:
                         return False
                 return True
             else:
