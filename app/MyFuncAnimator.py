@@ -5,6 +5,7 @@ import numpy as np
 import geopandas as gpd
 import pandas as pd
 from matplotlib.colors import Normalize, LogNorm
+from matplotlib.animation import FuncAnimation
 import matplotlib.pyplot as plt
 import matplotlib as mpl 
 
