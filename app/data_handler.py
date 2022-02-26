@@ -1,4 +1,5 @@
 import geopandas as gpd
+import os.path
 import numpy as np
 import pandas as pd
 from typing import Tuple
@@ -19,8 +20,15 @@ class DataHandler:
         self.default_initial_data = self._load_simulation_initial_values(
             default_age_group_data_path, default_hospital_beds_data_path
         )
-        self.recorded_cases = self._load_recorded_covid_cases(default_recorded_covid_cases_path)
-        self.district_geometries = self._load_district_geometries(default_districts_geometry_path)
+        if os.path.isfile(default_recorded_covid_cases_path):
+            self.recorded_cases = self._load_recorded_covid_cases(default_recorded_covid_cases_path)
+        else:
+            print(f"No file at {default_recorded_covid_cases_path}! Loading recorded cases was skipped.")
+
+        if os.path.isfile(default_districts_geometry_path):
+            self.district_geometries = self._load_district_geometries(default_districts_geometry_path)
+        else:
+            print(f"No file at {default_districts_geometry_path}! Loading geometry data was skipped.")
 
     def _load_simulation_initial_values(
         self, age_group_data_path, hospital_beds_data_path
@@ -160,9 +168,14 @@ class DataHandler:
 
         return beds
 
-    def get_simulation_initial_values(self) -> dict:
+    def get_simulation_initial_values(self, number_of_districts: int = 401) -> dict:
         """
         Return loaded initial data for simulation
+
+        Parameters
+        ----------
+        number_of_districts : int
+            Specify the number of districts the result should have (Allowed: 1, 16, 401)
 
         Returns
         -------
@@ -175,23 +188,41 @@ class DataHandler:
             .to_dict("index")
         )
 
-        for (key, value) in initial_values.items():
-            initial_values[key]["N_total"] = initial_values[key].pop("Insgesamt")
-            initial_values[key]["B"] = initial_values[key].pop("Krankenhausbetten")
-            initial_values[key]["N"] = np.array(
+        for district, district_val in initial_values.items():
+            initial_values[district]["N_total"] = initial_values[district].pop("Insgesamt")
+            initial_values[district]["B"] = initial_values[district].pop("Krankenhausbetten")
+            initial_values[district]["N"] = np.array(
                 [
-                    value2
-                    for key2, value2 in value.items()
-                    if key2 not in ["N_total", "B"]
+                    value
+                    for age_group, value in district_val.items()
+                    if age_group not in ["N_total", "B"]
                 ]
             )
-            initial_values[key] = {
-                key2: initial_values[key][key2]
-                for key2 in initial_values[key]
-                if key2 in ["N_total", "N", "B"]
+            initial_values[district] = {
+                key: initial_values[district][key]
+                for key in initial_values[district]
+                if key in ["N_total", "N", "B"]
             }
 
-        return initial_values
+        if number_of_districts == 1:
+            return {
+                    0: {
+                        'N_total': np.sum([value['N_total'] for value in initial_values.values()]),
+                        'B': np.sum([value['B'] for value in initial_values.values()]),
+                        'N': np.sum([value['N'] for value in initial_values.values()], axis=(0))
+                    }
+                }
+        elif number_of_districts == 16:
+            return {
+                    i: {
+                        'N_total': np.sum([value['N_total'] for key, value in initial_values.items() if i * 1000 <= int(key) < (i + 1) * 1000]),
+                        'B': np.sum([value['B'] for key, value in initial_values.items() if i * 1000 <= int(key) < (i + 1) * 1000]),
+                        'N': np.sum([value['N'] for key, value in initial_values.items() if i * 1000 <= int(key) < (i + 1) * 1000], axis=(0))
+                    }
+                    for i in range(1, 16+1)
+                }
+        else:
+            return initial_values
 
     def real_seir(self, df, vac_df):
         """

@@ -10,6 +10,7 @@ class Model:
         self,
         params: dict = None,
         fill_missing_values: bool = True,
+        load_base_parameter: bool = True,
         default_values_path="data/default_values.json",
         default_domains_path="data/default_domains.json",
     ) -> None:
@@ -27,6 +28,7 @@ class Model:
             model=self,
             params=params,
             fill_missing_values=fill_missing_values,
+            load_base_parameter=load_base_parameter,
             default_values_path=default_values_path,
             default_domains_path=default_domains_path,
         )
