@@ -354,17 +354,17 @@ class Controller:
             self.hyper_data = shape_data_dict[(0,)]
             self.misc_data = shape_data_dict[(J,)]
 
-            # TODO rename
+            # TODO
             class_data = self.classes_data.reshape((len(self.classes_keys), J, K))
-            tmp = {key: class_data[i] for i, key in enumerate(self.classes_keys)}
+            reshaped_params = {key: class_data[i] for i, key in enumerate(self.classes_keys)}
 
             greeks_data = self.greeks_data.reshape((len(self.greeks_keys), t, J, K))
-            tmp.update({key: greeks_data[i] for i, key in enumerate(self.greeks_keys)})
+            reshaped_params.update({key: greeks_data[i] for i, key in enumerate(self.greeks_keys)})
 
             spec_greeks_data = self.special_greeks_data.reshape((len(self.special_greeks_keys), t, J, K, K))
-            tmp.update({key: spec_greeks_data[i] for i, key in enumerate(self.special_greeks_keys)})
+            reshaped_params.update({key: spec_greeks_data[i] for i, key in enumerate(self.special_greeks_keys)})
 
-            self.update_params(params=tmp, fill_missing_values=False)
+            self.update_params(params=reshaped_params, fill_missing_values=False)
         else:
             self.classes_data = self.broadcast_params_into_shape(
                 params=params,
