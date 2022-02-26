@@ -460,12 +460,19 @@ class DataHandler:
         data_frame = data_frame.assign(Bundesland="")
         # disable two districts causing problems with geopandas
         data_frame = data_frame[~data_frame["RS"].isin(['11000', '16056'])]
-        dates = data_frame[data_frame["RS"] == "01001"]["Meldedatum"]
+
+        # len(map_params) == 1 means that it is one district "Germany" with RS "0"
+        dates = None
+        if len(map_params) > 1:
+            dates = data_frame[data_frame["RS"] == "01001"]["Meldedatum"]
+        else:
+            dates = data_frame[data_frame["RS"] == "0"]["Meldedatum"]
 
         geo = self.get_district_geometries()
-        geo = pd.concat(
-            [geo[geo["RS"] == district] for district in map_params.values()]
-        )
+        if len(map_params) > 1:
+            geo = pd.concat(
+                [geo[geo["RS"] == district] for district in map_params.values()]
+            )
 
         return data_frame, geo, dates
 
