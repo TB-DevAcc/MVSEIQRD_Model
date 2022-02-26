@@ -313,14 +313,14 @@ class Controller:
         self.misc_data = None  # [(1,)]
         self.update_shape_data(self._params, t, J, K, init=True)
 
-    def update(self, params, fill_missing_values, reset=False, load_base_data=False) -> None:
+    def update(self, params, fill_missing_values, reset=False) -> None:
         """
         Updates the controller to the latest parameters. 
         Wrapper around update_params and update_shape_data.
         """
         # Last values
         last_params = {k: [v.ravel()[-1]] for k, v in params.items()}
-        self.update_params(last_params, fill_missing_values, reset=reset, load_base_data=load_base_data)
+        self.update_params(last_params, fill_missing_values, reset=reset)
 
         # Full values over time
         t, J, K = self._params["t"], self._params["J"], self._params["K"]
