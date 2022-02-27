@@ -246,26 +246,26 @@ class Model:
         # call simulator with simulation type and current parameters
         params = self.controller.get_params()
         simulation_type = self.detect_simulation_type(params)
-        retParams = {}
+        simulated_params = {}
         (
-            retParams["M"],
-            retParams["V"],
-            retParams["S"],
-            retParams["E_tr"],
-            retParams["E_nt"],
-            retParams["I_asym"],
-            retParams["I_sym"],
-            retParams["I_sev"],
-            retParams["Q_asym"],
-            retParams["Q_sym"],
-            retParams["Q_sev"],
-            retParams["R"],
-            retParams["D"],
+            simulated_params["M"],
+            simulated_params["V"],
+            simulated_params["S"],
+            simulated_params["E_tr"],
+            simulated_params["E_nt"],
+            simulated_params["I_asym"],
+            simulated_params["I_sym"],
+            simulated_params["I_sev"],
+            simulated_params["Q_asym"],
+            simulated_params["Q_sym"],
+            simulated_params["Q_sev"],
+            simulated_params["R"],
+            simulated_params["D"],
         ) = self.simulator.run(params=params, simulation_type=simulation_type, simulation_algorithm=simulation_algorithm)
-        self.controller.update(params=retParams, fill_missing_values=True, reset=False, load_base_data=False)
+        self.controller.update(params=simulated_params, fill_missing_values=True, reset=False)
         params = self.controller.get_params()
 
-        return params
+        return simulated_params
 
     def run_app(self):
         return self.view.run_app()
