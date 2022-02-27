@@ -319,7 +319,7 @@ class Controller:
         Wrapper around update_params and update_shape_data.
         """
         # Last values
-        last_params = {k: [v.ravel()[-1]] for k, v in params.items()}
+        last_params = {k: v[-1] for k, v in params.items()}
         self.update_params(last_params, fill_missing_values, reset=reset)
 
         # Full values over time
