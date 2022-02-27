@@ -366,7 +366,6 @@ class Controller:
             self.hyper_data = shape_data_dict[(0,)]
             self.misc_data = shape_data_dict[(J,)]
 
-            # TODO
             class_data = self.classes_data.reshape((len(self.classes_keys), J, K))
             reshaped_params = {key: class_data[i] for i, key in enumerate(self.classes_keys)}
 
