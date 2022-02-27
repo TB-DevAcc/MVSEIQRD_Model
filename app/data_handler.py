@@ -424,7 +424,7 @@ class DataHandler:
             Dataframe with prepared data, geo data and dates of dataframe
 
         """
-        sim_type = model.detect_simulation_type(covid_data)
+        sim_type = model.simulator.simulation_type
         select_classes = []
         if mode == "I":
             if "I3" in sim_type:
