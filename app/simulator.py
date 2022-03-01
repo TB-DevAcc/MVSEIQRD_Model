@@ -1,8 +1,14 @@
+from enum import Enum
 from typing import Tuple
 
 import numpy as np
 import scipy
 from scipy.integrate import odeint, solve_ivp
+
+
+class Simulation_Algorithm(Enum):
+    SOLVE_IVP = 1,
+    ODE_INT = 2
 
 
 class Simulator:
@@ -13,11 +19,12 @@ class Simulator:
             "M V S E2 I3 Q3 R D",
         ]
         self.simulation_type = None
+        self.simulation_algorithm = None
         self.params = None
         self.J = 1
         self.K = 1
 
-    def run(self, params, simulation_type) -> dict:
+    def run(self, params, simulation_type, simulation_algorithm: Simulation_Algorithm = Simulation_Algorithm.SOLVE_IVP) -> dict:
         """
         Runs the simulation with the given simulation type
 
@@ -39,6 +46,7 @@ class Simulator:
         else:
             self.simulation_type = simulation_type
         # TODO make sure attribute error doesn't crash this
+        self.simulation_algorithm = simulation_algorithm
         self.J = params["J"]
         self.K = params["K"]
         self.param_count = self._count_params()
@@ -835,6 +843,10 @@ class Simulator:
             ) = params.reshape((self.param_count, self.J, self.K))
 
         result = []
+
+        if self.simulation_algorithm == Simulation_Algorithm.ODE_INT and int(t) >= int(self.params["t"]):
+            t = int(self.params["t"]) - 1
+
         if "M" in self.simulation_type:
             result.append(self._build_dMdt(t))
         else:
@@ -898,7 +910,10 @@ class Simulator:
             result of simulation
         """
         t = np.arange(0, params["t"], 1)
-        return self._simulate_RK45(t, params)
+        if self.simulation_algorithm == Simulation_Algorithm.ODE_INT:
+            return self._simulate_odeint(params, t)
+        else:
+            return self._simulate_RK45(t, params)
 
     def _calc_sigma(self, t, j, k, I_sev_jk, Q_sev_jk) -> np.float64:
         """
@@ -1038,18 +1053,6 @@ class Simulator:
         np.ndarray
             solution of ODE system solved with scipy.solve_ivp
         """
-        # TODO delete this if other implementation is successful
-        # for key in params:
-        #     if params[key] is not None:
-        #         if key in [ "beta_asym", "beta_sym", "beta_sev"]:
-        #             self.params[key] = np.ones((len(t), self.J, self.K, self.K)) * np.array(params[key])
-        #         elif key in ["M", "V", "R", "S", "E", "E_tr", "E_nt",
-        #                      "I", "I_asym", "I_sym", "I_sev", "Q", "Q_asym", "Q_sym", "Q_sev",
-        #                      "D"]:
-        #             self.params[key] = np.ones((self.J, self.K)) * np.array(params[key])
-        #         elif key not in ["K", "J", "N", "t", "Beds"]:
-        #             self.params[key] = np.ones((len(t), self.J, self.K)) * np.array(params[key])
-
         sol = solve_ivp(
             fun=self._build_ode_system,
             t_span=[t[0], t[-1]],
@@ -1083,7 +1086,10 @@ class Simulator:
             solution of ODE system solved with scipy.solve_ivp
         """
         sol = odeint(
-            func=self._build_ode_system, t=t, y0=np.array(self._prepare_y0()).ravel(), tfirst=True,
+            func=self._build_ode_system,
+            t=t,
+            y0=np.array(self._prepare_y0()).ravel(),
+            tfirst=True,
         )
 
         result = [

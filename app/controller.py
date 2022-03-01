@@ -27,8 +27,11 @@ class Controller:
 
     self._I = None  # Infectious
     self._I_asym = None
+    self._I_asym0_rel = None
     self._I_sym = None
+    self._I_sym0_rel = None
     self._I_sev = None
+    self._I_sev0_rel = None
 
     self._Q = None  # Quarantined
     self._Q_asym = None
@@ -164,8 +167,11 @@ class Controller:
             "E_nt": None,
             "I": None,
             "I_asym": None,
+            "I_asym0_rel": None,
             "I_sym": None,
+            "I_sym0_rel": None,
             "I_sev": None,
+            "I_sev0_rel": None,
             "Q": None,
             "Q_asym": None,
             "Q_sym": None,
@@ -220,8 +226,11 @@ class Controller:
             "E_nt": (J, K),
             "I": (J, K),
             "I_asym": (J, K),
+            "I_asym0_rel": (J, K),
             "I_sym": (J, K),
+            "I_sym0_rel": (J, K),
             "I_sev": (J, K),
+            "I_sev0_rel": (J, K),
             "Q": (J, K),
             "Q_asym": (J, K),
             "Q_sym": (J, K),
@@ -265,8 +274,11 @@ class Controller:
             "E_nt",
             "I",
             "I_asym",
+            "I_asym0_rel",
             "I_sym",
+            "I_sym0_rel",
             "I_sev",
+            "I_sev0_rel",
             "Q",
             "Q_asym",
             "Q_sym",
@@ -319,7 +331,7 @@ class Controller:
         Wrapper around update_params and update_shape_data.
         """
         # Last values
-        last_params = {k: [v.ravel()[-1]] for k, v in params.items()}
+        last_params = {k: v[-1] for k, v in params.items()}
         self.update_params(last_params, fill_missing_values, reset=reset)
 
         # Full values over time
@@ -354,7 +366,6 @@ class Controller:
             self.hyper_data = shape_data_dict[(0,)]
             self.misc_data = shape_data_dict[(J,)]
 
-            # TODO
             class_data = self.classes_data.reshape((len(self.classes_keys), J, K))
             reshaped_params = {key: class_data[i] for i, key in enumerate(self.classes_keys)}
 
@@ -621,6 +632,7 @@ class Controller:
             else:
                 self._params[key] = val
 
+        self._update_i()
         # make sure types are clear first under valid_domain and then initialize within bounds
         self.check_params(self._params)
 
@@ -640,12 +652,16 @@ class Controller:
 
         self._params["N"] = np.array(temp_params["N"], dtype=np.float64)
         self._params["Beds"] = np.array(temp_params["Beds"], dtype=np.float64)
-        # TODO
-        self._params["I_asym"] = self._params["N"] * 0.002
-        self._params["I_sym"] = self._params["N"] * 0.0002
-        self._params["I_sev"] = self._params["N"] * 0.0002
-        self._params["S"] = self._params["N"] - self._params["I_asym"] - self._params["I_sym"] - \
-                            self._params["I_sev"]
+        self._update_i()
+        self._params["S"] = self._params["N"] - self._params["I_asym"] - self._params["I_sym"] - self._params["I_sev"]
+
+    def _update_i(self):
+        if len(self._params["I_asym0_rel"]) > 0 and self._params["I_asym0_rel"][0] != 0:
+            self._params["I_asym"] = self._params["N"] * np.array(self._params["I_asym0_rel"])
+        if len(self._params["I_sym0_rel"]) > 0 and self._params["I_sym0_rel"][0] != 0:
+            self._params["I_sym"] = self._params["N"] * np.array(self._params["I_sym0_rel"])
+        if len(self._params["I_sev0_rel"]) > 0 and self._params["I_sev0_rel"][0] != 0:
+            self._params["I_sev"] = self._params["N"] * np.array(self._params["I_sev0_rel"])
 
     def set_params(self, params: dict) -> None:
         """
