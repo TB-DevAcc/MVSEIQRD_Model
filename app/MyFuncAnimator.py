@@ -2,7 +2,6 @@
 from tqdm.notebook import *
 from app.data_handler import DataHandler
 import numpy as np
-import geopandas as gpd
 import pandas as pd
 from matplotlib.colors import Normalize, LogNorm
 import matplotlib.pyplot as plt
@@ -131,7 +130,7 @@ class MyFuncAnimator:
                   norm = self.norm,
                   categorical=False,
                   legend=False,
-                  cmap="brg_r"
+                  cmap="gist_ncar_r"
                   )
         
         return self.t_df,
@@ -143,13 +142,12 @@ class MyFuncAnimator:
     def FuncAnimator(self):
         self.ax.set_axis_off()
         self.norm = Normalize(vmin=1, vmax=self.maxNum)
-        cax = self.fig.add_axes([self.ax.get_position().x0,self.ax.get_position().y0,self.ax.get_position().width, 0.02])
-        sm = plt.cm.ScalarMappable(cmap="brg_r", norm=self.norm)
+        cax = self.fig.add_axes([self.ax.get_position().x0,self.ax.get_position().y0-0.06,self.ax.get_position().width, 0.02])
+        sm = plt.cm.ScalarMappable(cmap="gist_ncar_r", norm=self.norm)
         cb = self.fig.colorbar(sm, cax=cax, orientation="horizontal")
         
         ani = mpl.animation.FuncAnimation(self.fig, self.animate, frames=self.length, interval=self.length,
                                           repeat=False, blit=False)
-        # ani.save('myAnimation.gif', writer='imagemagick', fps=2)
         return ani
     
     
