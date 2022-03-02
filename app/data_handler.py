@@ -407,12 +407,15 @@ class DataHandler:
 
         return c_plt_df
 
-    def prepare_simulated_covid_data(self, model, covid_data: dict, mode: str = "I") -> Tuple:
+    def prepare_simulated_covid_data(self, model, covid_data: dict, mode: str = "I", start_date: str = "2020-01-01") -> Tuple:
         """
         Creates a dataframe for usage in MyFuncAnimator from simulation results
 
         Parameters
         ----------
+        model
+        start_date : str
+            date animation should start - default: 2020-01-01
         covid_data : dict
             simulation results
         mode : str
@@ -448,7 +451,7 @@ class DataHandler:
         map_params = model.controller.map_params
         data_frame.rename(columns=map_params, inplace=True)
         data_frame = data_frame.assign(
-            Meldedatum=pd.date_range("2021-01-01", periods=365)
+            Meldedatum=pd.date_range(start_date, periods=covid_data[select_classes[0]].shape[0])
         )
         data_frame = pd.melt(
             data_frame, id_vars=["Meldedatum"], value_vars=map_params.values()
