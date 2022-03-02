@@ -382,7 +382,7 @@ class DataHandler:
         else:
             return self._load_district_geometries(districts_geometry_path)
 
-    def prepare_real_covid_data(self, covid_data: pd.DataFrame = None) -> pd.DataFrame:
+    def prepare_real_covid_data(self, covid_data: pd.DataFrame = None) -> dict:
         """
 
         Parameters
@@ -392,7 +392,7 @@ class DataHandler:
 
         Returns
         -------
-        pd.DataFrame
+        dict
         """
         if covid_data is None:
             covid_data = self.recorded_cases
@@ -404,8 +404,11 @@ class DataHandler:
         c_plt_df["Meldedatum"] = pd.to_datetime(c_plt_df["Meldedatum"])
         c_plt_df["NeuGenesen"] = c_plt_df["NeuGenesen"].abs()
         c_plt_df["NeuGenesen_seven_day_average"] = c_plt_df["NeuGenesen_seven_day_average"].abs()
-
-        return c_plt_df
+        params = c_plt_df.set_index("Meldedatum")
+        param = {}
+        for key, values in params.items():
+            param[key] = values
+        return param
 
     def prepare_simulated_covid_data(self, model, covid_data: dict, mode: str = "I", start_date: str = "2020-01-01") -> Tuple:
         """
