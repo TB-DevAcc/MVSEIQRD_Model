@@ -12,8 +12,8 @@ class DataHandler:
 
     def __init__(
         self,
-        default_age_group_data_path="data/simulation_test/altersgruppen.csv",
-        default_hospital_beds_data_path="data/simulation_test/krankenhausbetten.csv",
+        default_age_group_data_path="data/einwohner-nach-alter.csv",
+        default_hospital_beds_data_path="data/krankenhausbetten.csv",
         default_recorded_covid_cases_path="data/RKI_COVID19.csv",
         default_districts_geometry_path="data/RKI_Corona_Landkreise.geojson",
     ):
