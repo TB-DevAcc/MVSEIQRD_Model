@@ -315,6 +315,7 @@ class Controller:
         # Set with update_shape_data()
         self.classes_keys = None
         self.classes_data = None  # [(J, K)]
+        self.original_classes_keys = None
         self.original_classes_data = None  # classes_data before the first run (J, K)
         self.greeks_keys = None
         self.greeks_data = None  # [(t, J, K)]
@@ -362,37 +363,41 @@ class Controller:
             shape_data_dict = self.broadcast_params_into_shape()
             # shapes taken from PARAM_SHAPE
             self.classes_data = shape_data_dict[(J, K)]
+            self.original_classes_keys = self.classes_keys
             self.original_classes_data = shape_data_dict[(J, K)]
             self.greeks_data = shape_data_dict[(t, J, K)]
             self.special_greeks_data = shape_data_dict[(t, J, K, K)]
+            print("self.special_greeks_data.shape", self.special_greeks_data.shape)
             self.hyper_data = shape_data_dict[(0,)]
             self.misc_data = shape_data_dict[(J,)]
         else:
-            self.classes_data = self.broadcast_params_into_shape(
-                params=params,
-                params_shapes={
-                    "M": (t, J, K),
-                    "V": (t, J, K),
-                    "R": (t, J, K),
-                    "S": (t, J, K),
-                    "E": (t, J, K),
-                    "E_tr": (t, J, K),
-                    "E_nt": (t, J, K),
-                    "I": (t, J, K),
-                    "I_asym": (t, J, K),
-                    "I_sym": (t, J, K),
-                    "I_sev": (t, J, K),
-                    "Q": (t, J, K),
-                    "Q_asym": (t, J, K),
-                    "Q_sym": (t, J, K),
-                    "Q_sev": (t, J, K),
-                    "D": (t, J, K),
-                },
-                t=t,
-                J=J,
-                K=K,
-            )[(t, J, K)]
+            # new classes_data
             self.classes_keys = params.keys()
+            params_shapes = dict(zip(self.classes_keys, [(t, J, K)] * len(self.classes_keys)))
+            self.classes_data = self.broadcast_params_into_shape(
+                params=params, params_shapes=params_shapes, t=t, J=J, K=K,
+            )[(t, J, K)]
+
+            print("self.special_greeks_data.shape2", self.special_greeks_data.shape)
+
+            # check correct form/ parameter list for original_classes_data
+            original_classes_data_dict = dict(
+                zip(
+                    self.original_classes_keys,
+                    self.original_classes_data.reshape((self.original_classes_keys, J, K)),
+                )
+            )
+            new_original_classes_data = {}
+            for i, key in enumerate(self.classes_keys):
+                if key in original_classes_data_dict:
+                    new_original_classes_data[key] = original_classes_data_dict[key]
+                else:
+                    new_original_classes_data[key] = self.classes_data.reshape(
+                        (self.classes_keys, J, K)
+                    )[i]
+
+            self.original_classes_keys = new_original_classes_data.keys()
+            self.original_classes_data = np.array(new_original_classes_data.values()).ravel()
 
     def broadcast_params_into_shape(
         self, params: dict = None, params_shapes: dict = None, t=None, J=None, K=None
@@ -445,7 +450,9 @@ class Controller:
             if shape == (J, K):
                 self.classes_keys = keys_with_shape
             elif shape == (t, J, K):
-                self.greeks_keys = keys_with_shape
+                # HACK
+                if "S" not in keys_with_shape:
+                    self.greeks_keys = keys_with_shape
             elif shape == (t, J, K, K):
                 self.special_greeks_keys = keys_with_shape
             elif shape == (0,):
@@ -707,7 +714,9 @@ class Controller:
         t, J, K = self._params["t"], self._params["J"], self._params["K"]
 
         if use_original_classes_data:
-            classes_data = self.original_classes_data.reshape((len(self.classes_keys), J, K))
+            classes_data = self.original_classes_data.reshape(
+                (len(self.original_classes_keys), J, K)
+            )
         else:
             classes_data = self.classes_data.reshape((len(self.classes_keys), J, K))
 
@@ -715,8 +724,12 @@ class Controller:
         special_greeks_data = self.special_greeks_data.reshape(
             (len(self.special_greeks_keys), t, J, K, K)
         )
-        hyper_data = self.hyper_data.reshape((len(self.hyper_keys), 0,))
+        print("self.special_greeks_data.shape3", self.special_greeks_data.shape)
         misc_data = self.misc_data.reshape((len(self.misc_keys), J,))
+
+        print("*self.special_greeks_keys", *self.special_greeks_keys)
+        for i, data in enumerate(special_greeks_data):
+            print("*special_greeks_data", i, data.shape)
 
         params = dict(
             zip(
@@ -732,5 +745,6 @@ class Controller:
         params["J"] = J
         params["K"] = K
         params["t"] = t
+        params["N"] = self._params["N"]
 
         return params
