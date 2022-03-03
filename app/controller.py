@@ -721,13 +721,16 @@ class Controller:
         params = dict(
             zip(
                 (
-                    self.classes_keys,
-                    self.greeks_keys,
-                    self.special_greeks_keys,
-                    self.hyper_keys,
-                    self.misc_keys,
-                )(classes_data, greeks_data, special_greeks_data, hyper_data, misc_data)
+                    *self.classes_keys,
+                    *self.greeks_keys,
+                    *self.special_greeks_keys,
+                    *self.misc_keys,
+                ),
+                (*classes_data, *greeks_data, *special_greeks_data, *misc_data),
             )
         )
+        params["J"] = J
+        params["K"] = K
+        params["t"] = t
 
         return params
