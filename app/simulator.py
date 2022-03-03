@@ -7,12 +7,13 @@ from scipy.integrate import odeint, solve_ivp
 
 
 class Simulation_Algorithm(Enum):
-    SOLVE_IVP = 1,
+    SOLVE_IVP = (1,)
     ODE_INT = 2
 
 
 class Simulator:
-    def __init__(self) -> None:
+    def __init__(self, model) -> None:
+        self.model = model
         self.ode_list = None
         self.supported_sim_types = [
             "S I",
@@ -24,7 +25,12 @@ class Simulator:
         self.J = 1
         self.K = 1
 
-    def run(self, params, simulation_type, simulation_algorithm: Simulation_Algorithm = Simulation_Algorithm.SOLVE_IVP) -> dict:
+    def run(
+        self,
+        params,
+        simulation_type,
+        simulation_algorithm: Simulation_Algorithm = Simulation_Algorithm.SOLVE_IVP,
+    ) -> dict:
         """
         Runs the simulation with the given simulation type
 
@@ -223,10 +229,7 @@ class Simulator:
                     np.array(
                         [
                             np.sum(
-                                [
-                                    beta_asym[int(t), j, l, k] * I_asym[j, l]
-                                    for l in range(self.K)
-                                ]
+                                [beta_asym[int(t), j, l, k] * I_asym[j, l] for l in range(self.K)]
                             )
                             * S[j, k]
                             / N[j, k]
@@ -428,11 +431,7 @@ class Simulator:
             res.append(
                 mu_sym[int(t)] * I_asym
                 + mu_sym[int(t)] * I_sev
-                - (
-                    gamma_sym[int(t)] * I_sym
-                    + mu_sev[int(t)] * I_sym
-                    + tau_sym[int(t)] * I_sym
-                )
+                - (gamma_sym[int(t)] * I_sym + mu_sev[int(t)] * I_sym + tau_sym[int(t)] * I_sym)
             )
         elif "I2" in cls:
             pass
@@ -551,11 +550,7 @@ class Simulator:
             Q_asym = self.params["Q_asym"]
             res.append(
                 -1
-                * (
-                    gamma_asym[int(t)] * Q_asym
-                    + mu_sym[int(t)] * Q_asym
-                    + mu_sev[int(t)] * Q_asym
-                )
+                * (gamma_asym[int(t)] * Q_asym + mu_sym[int(t)] * Q_asym + mu_sev[int(t)] * Q_asym)
             )
         elif "Q2" in cls:
             pass
@@ -844,7 +839,9 @@ class Simulator:
 
         result = []
 
-        if self.simulation_algorithm == Simulation_Algorithm.ODE_INT and int(t) >= int(self.params["t"]):
+        if self.simulation_algorithm == Simulation_Algorithm.ODE_INT and int(t) >= int(
+            self.params["t"]
+        ):
             t = int(self.params["t"]) - 1
 
         if "M" in self.simulation_type:
@@ -1004,40 +1001,6 @@ class Simulator:
         """
         return self._simulate_ivp(t, params, scipy.integrate.DOP853)
 
-    def _prepare_y0(self) -> list:
-        """
-        Prepare start values for the current iteration
-        Returns
-        -------
-        list
-            Start values for current iteration
-        """
-        if self.simulation_type == "S I":
-            return [self.params["S"], self.params["I"]]
-        if self.simulation_type == "S E I R":
-            return [
-                self.params["S"],
-                self.params["E"],
-                self.params["I"],
-                self.params["R"],
-            ]
-        if self.simulation_type == "M V S E2 I3 Q3 R D":
-            return [
-                self.params["M"],
-                self.params["V"],
-                self.params["S"],
-                self.params["E_tr"],
-                self.params["E_nt"],
-                self.params["I_asym"],
-                self.params["I_sym"],
-                self.params["I_sev"],
-                self.params["Q_asym"],
-                self.params["Q_sym"],
-                self.params["Q_sev"],
-                self.params["R"],
-                self.params["D"],
-            ]
-
     def _simulate_ivp(self, t, params, method) -> np.ndarray:
         """
         Solve ODE system with solve_ivp
@@ -1053,19 +1016,25 @@ class Simulator:
         np.ndarray
             solution of ODE system solved with scipy.solve_ivp
         """
+        classes_keys = self.model.translate_simulation_type(self.simulation_type)
+        classes_data = np.array([self.params[key] for key in classes_keys]).ravel()
+
         sol = solve_ivp(
             fun=self._build_ode_system,
             t_span=[t[0], t[-1]],
             t_eval=t,
-            y0=np.array(self._prepare_y0()).ravel(),
+            y0=classes_data,
             method=method,
         )
 
         result = [
             np.array(
-                [sol.y[:, i].reshape((self.param_count, self.J, self.K))[j] for i in range(len(t))]
+                [
+                    sol.y[:, i].reshape((len(classes_keys), self.J, self.K))[j]
+                    for i in range(len(t))
+                ]
             )
-            for j in range(13)
+            for j in range(len(classes_keys))
         ]
 
         return result
@@ -1086,10 +1055,7 @@ class Simulator:
             solution of ODE system solved with scipy.solve_ivp
         """
         sol = odeint(
-            func=self._build_ode_system,
-            t=t,
-            y0=np.array(self._prepare_y0()).ravel(),
-            tfirst=True,
+            func=self._build_ode_system, t=t, y0=np.array(self._prepare_y0()).ravel(), tfirst=True,
         )
 
         result = [
