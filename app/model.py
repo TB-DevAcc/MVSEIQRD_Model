@@ -1,7 +1,7 @@
 import numpy as np
 
 from .controller import Controller
-from .simulator import Simulator, Simulation_Algorithm
+from .simulator import Simulation_Algorithm, Simulator
 from .view import View
 
 
@@ -237,14 +237,16 @@ class Model:
         """
         self.controller.reset()
 
-    def run(self, simulation_algorithm: Simulation_Algorithm = Simulation_Algorithm.SOLVE_IVP) -> dict:
+    def run(
+        self, simulation_algorithm: Simulation_Algorithm = Simulation_Algorithm.SOLVE_IVP
+    ) -> dict:
         """
         Retrieves parameter, runs the MVRSEIQRI simulation and updates the view.
         This is equivalent to simulating one timestep.
         """
 
         # call simulator with simulation type and current parameters
-        params = self.controller.get_params()
+        params = self.controller.get_full_params()
         simulation_type = self.detect_simulation_type(params)
         simulated_params = {}
         (
@@ -261,7 +263,11 @@ class Model:
             simulated_params["Q_sev"],
             simulated_params["R"],
             simulated_params["D"],
-        ) = self.simulator.run(params=params, simulation_type=simulation_type, simulation_algorithm=simulation_algorithm)
+        ) = self.simulator.run(
+            params=params,
+            simulation_type=simulation_type,
+            simulation_algorithm=simulation_algorithm,
+        )
         self.controller.update(params=simulated_params, fill_missing_values=True, reset=False)
         params = self.controller.get_params()
 

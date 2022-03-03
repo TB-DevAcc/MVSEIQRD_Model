@@ -365,17 +365,6 @@ class Controller:
             self.special_greeks_data = shape_data_dict[(t, J, K, K)]
             self.hyper_data = shape_data_dict[(0,)]
             self.misc_data = shape_data_dict[(J,)]
-
-            class_data = self.classes_data.reshape((len(self.classes_keys), J, K))
-            reshaped_params = {key: class_data[i] for i, key in enumerate(self.classes_keys)}
-
-            greeks_data = self.greeks_data.reshape((len(self.greeks_keys), t, J, K))
-            reshaped_params.update({key: greeks_data[i] for i, key in enumerate(self.greeks_keys)})
-
-            spec_greeks_data = self.special_greeks_data.reshape((len(self.special_greeks_keys), t, J, K, K))
-            reshaped_params.update({key: spec_greeks_data[i] for i, key in enumerate(self.special_greeks_keys)})
-
-            self.update_params(params=reshaped_params, fill_missing_values=False)
         else:
             self.classes_data = self.broadcast_params_into_shape(
                 params=params,
@@ -410,7 +399,7 @@ class Controller:
         Creates a 1D np.array for every unique shape in params_shapes. 
         E.g. all params with shape (J, K) are converted to an array with 
         shape (NumberOfClasses*J*K,). Can be reshaped back into an array with the first dimension
-        being the parameter using np.reshape(X, NumberOfClasses, J, K).
+        being the parameter using np.reshape(X, (NumberOfClasses, J, K)).
 
         The order of the parameters in the output one dimensional array is based on the order
         they are in in params
@@ -639,7 +628,9 @@ class Controller:
         return self._params
 
     def _load_base_parameter(self):
-        base_data = self.data_handler.get_simulation_initial_values(number_of_districts=self._params["J"])
+        base_data = self.data_handler.get_simulation_initial_values(
+            number_of_districts=self._params["J"]
+        )
         if len(base_data) > 0:
             temp_params = {"N": [], "Beds": []}
             for i, (key, value) in enumerate(base_data.items()):
@@ -653,7 +644,12 @@ class Controller:
         self._params["N"] = np.array(temp_params["N"], dtype=np.float64)
         self._params["Beds"] = np.array(temp_params["Beds"], dtype=np.float64)
         self._update_i()
-        self._params["S"] = self._params["N"] - self._params["I_asym"] - self._params["I_sym"] - self._params["I_sev"]
+        self._params["S"] = (
+            self._params["N"]
+            - self._params["I_asym"]
+            - self._params["I_sym"]
+            - self._params["I_sev"]
+        )
 
     def _update_i(self):
         if len(self._params["I_asym0_rel"]) > 0 and self._params["I_asym0_rel"][0] != 0:
@@ -679,7 +675,7 @@ class Controller:
             # Consider shape of parameter and set new values to uniformally distributed value
             # TODO find a more accurate extrapolation method to conserve relations in the param
             target_len = len(self._params[key])
-            self._params[key] = np.array(params[key]) #for i in range(target_len)])
+            self._params[key] = np.array(params[key])  # for i in range(target_len)])
         self.check_params(self._params)
 
     def get_params(self, keys: list = None) -> dict:
@@ -695,3 +691,37 @@ class Controller:
             return {key: self._params[key] for key in keys}
         else:
             return self._params
+
+    def get_full_params(self) -> dict:
+        """
+        Reshapes and combines classes_data, greeks_data, hyper_data and misc_data.
+
+        Returns
+        -------
+        dict
+            Full paramter with full shape e.g. (t, J, K)
+        """
+
+        t, J, K = self._params["t"], self._params["J"], self._params["K"]
+
+        classes_data = self.classes_data.reshape((len(self.classes_keys), J, K))
+        greeks_data = self.greeks_data.reshape((len(self.greeks_keys), t, J, K))
+        special_greeks_data = self.special_greeks_data.reshape(
+            (len(self.special_greeks_keys), t, J, K, K)
+        )
+        hyper_data = self.hyper_data.reshape((len(self.hyper_keys), 0,))
+        misc_data = self.misc_data.reshape((len(self.misc_keys), J,))
+
+        params = dict(
+            zip(
+                (
+                    self.classes_keys,
+                    self.greeks_keys,
+                    self.special_greeks_keys,
+                    self.hyper_keys,
+                    self.misc_keys,
+                )(classes_data, greeks_data, special_greeks_data, hyper_data, misc_data)
+            )
+        )
+
+        return params
