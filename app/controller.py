@@ -315,6 +315,8 @@ class Controller:
         # Set with update_shape_data()
         self.classes_keys = None
         self.classes_data = None  # [(J, K)]
+        self.original_classes_keys = None
+        self.original_classes_data = None  # classes_data before the first run (J, K)
         self.greeks_keys = None
         self.greeks_data = None  # [(t, J, K)]
         self.special_greeks_keys = None
@@ -361,47 +363,38 @@ class Controller:
             shape_data_dict = self.broadcast_params_into_shape()
             # shapes taken from PARAM_SHAPE
             self.classes_data = shape_data_dict[(J, K)]
+            self.original_classes_keys = self.classes_keys.copy()
+            self.original_classes_data = shape_data_dict[(J, K)]
             self.greeks_data = shape_data_dict[(t, J, K)]
             self.special_greeks_data = shape_data_dict[(t, J, K, K)]
             self.hyper_data = shape_data_dict[(0,)]
             self.misc_data = shape_data_dict[(J,)]
-
-            class_data = self.classes_data.reshape((len(self.classes_keys), J, K))
-            reshaped_params = {key: class_data[i] for i, key in enumerate(self.classes_keys)}
-
-            greeks_data = self.greeks_data.reshape((len(self.greeks_keys), t, J, K))
-            reshaped_params.update({key: greeks_data[i] for i, key in enumerate(self.greeks_keys)})
-
-            spec_greeks_data = self.special_greeks_data.reshape((len(self.special_greeks_keys), t, J, K, K))
-            reshaped_params.update({key: spec_greeks_data[i] for i, key in enumerate(self.special_greeks_keys)})
-
-            self.update_params(params=reshaped_params, fill_missing_values=False)
         else:
+            # new classes_data
+            self.classes_keys = np.array([k for k in params.keys()])
+            params_shapes = dict(zip(self.classes_keys, [(t, J, K)] * len(self.classes_keys)))
             self.classes_data = self.broadcast_params_into_shape(
-                params=params,
-                params_shapes={
-                    "M": (t, J, K),
-                    "V": (t, J, K),
-                    "R": (t, J, K),
-                    "S": (t, J, K),
-                    "E": (t, J, K),
-                    "E_tr": (t, J, K),
-                    "E_nt": (t, J, K),
-                    "I": (t, J, K),
-                    "I_asym": (t, J, K),
-                    "I_sym": (t, J, K),
-                    "I_sev": (t, J, K),
-                    "Q": (t, J, K),
-                    "Q_asym": (t, J, K),
-                    "Q_sym": (t, J, K),
-                    "Q_sev": (t, J, K),
-                    "D": (t, J, K),
-                },
-                t=t,
-                J=J,
-                K=K,
+                params=params, params_shapes=params_shapes, t=t, J=J, K=K,
             )[(t, J, K)]
-            self.classes_keys = params.keys()
+
+            # check correct form/ parameter list for original_classes_data
+            original_classes_data_dict = dict(
+                zip(
+                    self.original_classes_keys,
+                    self.original_classes_data.reshape((len(self.original_classes_keys), J, K)),
+                )
+            )
+            new_original_classes_data = {}
+            for i, key in enumerate(self.classes_keys):
+                if key in original_classes_data_dict:
+                    new_original_classes_data[key] = original_classes_data_dict[key]
+                else:
+                    new_original_classes_data[key] = self.classes_data.reshape(
+                        (self.classes_keys, J, K)
+                    )[i]
+
+            self.original_classes_keys = new_original_classes_data.keys()
+            self.original_classes_data = np.array(list(new_original_classes_data.values())).ravel()
 
     def broadcast_params_into_shape(
         self, params: dict = None, params_shapes: dict = None, t=None, J=None, K=None
@@ -410,7 +403,7 @@ class Controller:
         Creates a 1D np.array for every unique shape in params_shapes. 
         E.g. all params with shape (J, K) are converted to an array with 
         shape (NumberOfClasses*J*K,). Can be reshaped back into an array with the first dimension
-        being the parameter using np.reshape(X, NumberOfClasses, J, K).
+        being the parameter using np.reshape(X, (NumberOfClasses, J, K)).
 
         The order of the parameters in the output one dimensional array is based on the order
         they are in in params
@@ -454,7 +447,9 @@ class Controller:
             if shape == (J, K):
                 self.classes_keys = keys_with_shape
             elif shape == (t, J, K):
-                self.greeks_keys = keys_with_shape
+                # HACK
+                if "S" not in keys_with_shape:
+                    self.greeks_keys = keys_with_shape
             elif shape == (t, J, K, K):
                 self.special_greeks_keys = keys_with_shape
             elif shape == (0,):
@@ -581,44 +576,6 @@ class Controller:
                     self._params["K"] = len(params[key][0])
                     break
 
-        # FIXME Dimensions see issue #28
-        # make sure entities and age groups are correct in every parameter
-        # for key in params:
-        #     if key not in ["K", "J", "beta"]:
-        #         if len(params[key][0]) != params["K"]:
-        #             raise ValueError(
-        #                 f"K:{self._K} does not match the first dimension of the"
-        #                 " parameters. If you intended to not subdivide the different classes,"
-        #                 " choose K=1 and wrap your parameters in a list."
-        #             )
-        #     elif key == "beta":
-        #         # TODO check correct shape of beta
-        #         pass
-
-        #     # check if classes add up to one
-        #     one = 1.0
-        #     for key in {
-        #         "M",
-        #         "V",
-        #         "S",
-        #         "E",
-        #         "E2",
-        #         "I",
-        #         "I2",
-        #         "I3",
-        #         "Q",
-        #         "Q2",
-        #         "Q3",
-        #         "R",
-        #         "D",
-        #     } & set(params.keys()):
-        #         one -= params[key]
-        # TODO temporarily outcommented; check class domains
-        # if not -1.0e-14 < one < 1.0e-14:
-        #     raise ValueError(
-        #         "Epidemiological classes do not add up to one." "Check input parameters."
-        #     )
-
     def initialize_parameters(self, params: dict = None, load_base_data: bool = False) -> dict:
         """
         Initializes all parameters either by default or by setting it with supplied params dict
@@ -639,7 +596,9 @@ class Controller:
         return self._params
 
     def _load_base_parameter(self):
-        base_data = self.data_handler.get_simulation_initial_values(number_of_districts=self._params["J"])
+        base_data = self.data_handler.get_simulation_initial_values(
+            number_of_districts=self._params["J"]
+        )
         if len(base_data) > 0:
             temp_params = {"N": [], "Beds": []}
             for i, (key, value) in enumerate(base_data.items()):
@@ -653,7 +612,12 @@ class Controller:
         self._params["N"] = np.array(temp_params["N"], dtype=np.float64)
         self._params["Beds"] = np.array(temp_params["Beds"], dtype=np.float64)
         self._update_i()
-        self._params["S"] = self._params["N"] - self._params["I_asym"] - self._params["I_sym"] - self._params["I_sev"]
+        self._params["S"] = (
+            self._params["N"]
+            - self._params["I_asym"]
+            - self._params["I_sym"]
+            - self._params["I_sev"]
+        )
 
     def _update_i(self):
         if len(self._params["I_asym0_rel"]) > 0 and self._params["I_asym0_rel"][0] != 0:
@@ -679,7 +643,25 @@ class Controller:
             # Consider shape of parameter and set new values to uniformally distributed value
             # TODO find a more accurate extrapolation method to conserve relations in the param
             target_len = len(self._params[key])
-            self._params[key] = np.array(params[key]) #for i in range(target_len)])
+            self._params[key] = [params[key] for _ in range(target_len)]
+
+            # HACK Better way to update shape data for single parameter?
+            t, J, K = self._params["t"], self._params["J"], self._params["K"]
+            # Overwriting a single parameter in shapes data
+            if key in self.greeks_keys:
+                ix = self.greeks_keys.index(key)
+                greeks_data = self.greeks_data.reshape((len(self.greeks_keys), t, J, K))
+                greeks_data[ix] = np.ones((t, J, K)) * params[key]
+                self.greeks_data = greeks_data.ravel()
+
+            elif key in self.special_greeks_keys:
+                ix = self.special_greeks_keys.index(key)
+                special_greeks_data = self.special_greeks_data.reshape(
+                    (len(self.special_greeks_keys), t, J, K, K)
+                )
+                special_greeks_data[ix] = np.ones((t, J, K, K)) * params[key]
+                self.special_greeks_data = special_greeks_data.ravel()
+
         self.check_params(self._params)
 
     def get_params(self, keys: list = None) -> dict:
@@ -695,3 +677,46 @@ class Controller:
             return {key: self._params[key] for key in keys}
         else:
             return self._params
+
+    def get_full_params(self, use_original_classes_data: bool = True) -> dict:
+        """
+        Reshapes and combines classes_data, greeks_data, hyper_data and misc_data.
+
+        Returns
+        -------
+        dict
+            Full paramter with full shape e.g. (t, J, K)
+        """
+
+        t, J, K = self._params["t"], self._params["J"], self._params["K"]
+
+        if use_original_classes_data:
+            classes_data = self.original_classes_data.reshape(
+                (len(self.original_classes_keys), J, K)
+            )
+        else:
+            classes_data = self.classes_data.reshape((len(self.classes_keys), J, K))
+
+        greeks_data = self.greeks_data.reshape((len(self.greeks_keys), t, J, K))
+        special_greeks_data = self.special_greeks_data.reshape(
+            (len(self.special_greeks_keys), t, J, K, K)
+        )
+        misc_data = self.misc_data.reshape((len(self.misc_keys), J,))
+
+        params = dict(
+            zip(
+                (
+                    *self.classes_keys,
+                    *self.greeks_keys,
+                    *self.special_greeks_keys,
+                    *self.misc_keys,
+                ),
+                (*classes_data, *greeks_data, *special_greeks_data, *misc_data),
+            )
+        )
+        params["J"] = J
+        params["K"] = K
+        params["t"] = t
+        params["N"] = np.ones((J, K)) * self._params["N"]
+
+        return params

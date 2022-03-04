@@ -1,7 +1,7 @@
 import numpy as np
 
 from .controller import Controller
-from .simulator import Simulator, Simulation_Algorithm
+from .simulator import Simulation_Algorithm, Simulator
 from .view import View
 
 
@@ -34,7 +34,7 @@ class Model:
         )
         self.get_params = self.controller.get_params
         self.update = self.controller.update
-        self.simulator = Simulator()
+        self.simulator = Simulator(self)
         self.view = View(self)
         self.plot = self.view.plot
 
@@ -155,6 +155,8 @@ class Model:
                 simulation_type = self.detect_simulation_type(params).split()
             else:
                 simulation_type = simulation_type.split()
+        else:
+            simulation_type = simulation_type.split()
         classes = []
         for letter in simulation_type:
             if letter == "M":
@@ -237,31 +239,24 @@ class Model:
         """
         self.controller.reset()
 
-    def run(self, simulation_algorithm: Simulation_Algorithm = Simulation_Algorithm.SOLVE_IVP) -> dict:
+    def run(
+        self, simulation_algorithm: Simulation_Algorithm = Simulation_Algorithm.SOLVE_IVP
+    ) -> dict:
         """
         Retrieves parameter, runs the MVRSEIQRI simulation and updates the view.
         This is equivalent to simulating one timestep.
         """
 
         # call simulator with simulation type and current parameters
-        params = self.controller.get_params()
+        params = self.controller.get_full_params(use_original_classes_data=True)
         simulation_type = self.detect_simulation_type(params)
-        simulated_params = {}
-        (
-            simulated_params["M"],
-            simulated_params["V"],
-            simulated_params["S"],
-            simulated_params["E_tr"],
-            simulated_params["E_nt"],
-            simulated_params["I_asym"],
-            simulated_params["I_sym"],
-            simulated_params["I_sev"],
-            simulated_params["Q_asym"],
-            simulated_params["Q_sym"],
-            simulated_params["Q_sev"],
-            simulated_params["R"],
-            simulated_params["D"],
-        ) = self.simulator.run(params=params, simulation_type=simulation_type, simulation_algorithm=simulation_algorithm)
+        classes_keys = self.translate_simulation_type(simulation_type)
+        res = self.simulator.run(
+            params=params,
+            simulation_type=simulation_type,
+            simulation_algorithm=simulation_algorithm,
+        )
+        simulated_params = dict(zip(classes_keys, res))
         self.controller.update(params=simulated_params, fill_missing_values=True, reset=False)
         params = self.controller.get_params()
 
