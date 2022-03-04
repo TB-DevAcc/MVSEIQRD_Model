@@ -643,7 +643,7 @@ class Controller:
             # Consider shape of parameter and set new values to uniformally distributed value
             # TODO find a more accurate extrapolation method to conserve relations in the param
             target_len = len(self._params[key])
-            self._params[key] = [params[key] for i in range(target_len)]
+            self._params[key] = [params[key] for _ in range(target_len)]
 
             # HACK Better way to update shape data for single parameter?
             t, J, K = self._params["t"], self._params["J"], self._params["K"]
@@ -717,6 +717,6 @@ class Controller:
         params["J"] = J
         params["K"] = K
         params["t"] = t
-        params["N"] = self._params["N"]
+        params["N"] = np.ones((J, K)) * self._params["N"]
 
         return params
