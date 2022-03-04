@@ -681,7 +681,7 @@ class Controller:
             # Consider shape of parameter and set new values to uniformally distributed value
             # TODO find a more accurate extrapolation method to conserve relations in the param
             target_len = len(self._params[key])
-            self._params[key] = np.array(params[key])  # for i in range(target_len)])
+            self._params[key] = [params[key] for i in range(target_len)]
         self.check_params(self._params)
 
     def get_params(self, keys: list = None) -> dict:
