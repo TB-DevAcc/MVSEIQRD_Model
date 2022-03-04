@@ -284,7 +284,6 @@ class View:
                 marks[3]: {"label": str(marks[3]), "style": {"color": colors["text"]}},
                 max_: {"label": str(int(marks[4])), "style": {"color": "#F50"}},
             }
-        print(slider_dict["epsilon"])
 
         sliders = []
         for slider_key in slider_dict:
