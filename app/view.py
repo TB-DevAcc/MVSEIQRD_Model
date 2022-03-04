@@ -270,7 +270,10 @@ class View:
             slider_dict[k][2] = np.round(np.median(params[k]), 4)
 
             # step
-            slider_dict[k][3] = slider_dict[k][2] / 10
+            if slider_dict[k][2] == 0.0:
+                slider_dict[k][3] = max_ / 10
+            else:
+                slider_dict[k][3] = slider_dict[k][2] / 10
 
             # marks
             marks = np.linspace(min_, max_, 5)
