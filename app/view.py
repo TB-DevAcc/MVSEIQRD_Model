@@ -227,31 +227,61 @@ class View:
             ],
         )
 
+        # key: [min, max, value, step, marks]
         slider_dict = {
-            "sigma": 0.5,
-            "rho_mat": 0.5,
-            "rho_vac": 0.5,
-            "rho_rec": 0.5,
-            "nu": 0.5,
-            "beta_asym": 0.5,
-            "beta_sym": 0.5,
-            "beta_sev": 0.5,
-            "psi": 0.5,
-            "epsilon": 0.5,
-            "gamma_asym": 0.5,
-            "gamma_sym": 0.5,
-            "gamma_sev": 0.5,
-            "gamma_sev_r": 0.5,
-            "gamma_sev_d": 0.5,
-            "mu_sym": 0.5,
-            "mu_sev": 0.5,
-            "tau_asym": 0.5,
-            "tau_sym": 0.5,
-            "tau_sev": 0.5,
+            "sigma": [0, 1, 0.5, 0.05, {}],
+            "rho_mat": [0, 1, 0.5, 0.05, {}],
+            "rho_vac": [0, 1, 0.5, 0.05, {}],
+            "rho_rec": [0, 1, 0.5, 0.05, {}],
+            "nu": [0, 1, 0.5, 0.05, {}],
+            "beta_asym": [0, 1, 0.5, 0.05, {}],
+            "beta_sym": [0, 1, 0.5, 0.05, {}],
+            "beta_sev": [0, 1, 0.5, 0.05, {}],
+            "psi": [0, 1, 0.5, 0.05, {}],
+            "epsilon": [0, 1, 0.5, 0.05, {}],
+            "gamma_asym": [0, 1, 0.5, 0.05, {}],
+            "gamma_sym": [0, 1, 0.5, 0.05, {}],
+            "gamma_sev": [0, 1, 0.5, 0.05, {}],
+            "gamma_sev_r": [0, 1, 0.5, 0.05, {}],
+            "gamma_sev_d": [0, 1, 0.5, 0.05, {}],
+            "mu_sym": [0, 1, 0.5, 0.05, {}],
+            "mu_sev": [0, 1, 0.5, 0.05, {}],
+            "tau_asym": [0, 1, 0.5, 0.05, {}],
+            "tau_sym": [0, 1, 0.5, 0.05, {}],
+            "tau_sev": [0, 1, 0.5, 0.05, {}],
         }
         params = self.model.get_params()
         for k in slider_dict:
-            slider_dict[k] = np.round(np.median(params[k]), 4)
+            # min
+            min_ = self.model.controller.default_domains[k][0]
+            slider_dict[k][0] = min_
+            # make sure limits are not 1.0, 2.0, 0.0 etc.
+            if min_ == round(min_):
+                min_ = int(min_)
+
+            # max
+            max_ = self.model.controller.default_domains[k][1]
+            slider_dict[k][1] = max_
+            # make sure limits are not 1.0, 2.0, 0.0 etc.
+            if max_ == round(max_):
+                max_ = int(max_)
+
+            # value
+            slider_dict[k][2] = np.round(np.median(params[k]), 4)
+
+            # step
+            slider_dict[k][3] = slider_dict[k][2] / 10
+
+            # marks
+            marks = np.linspace(min_, max_, 5)
+            slider_dict[k][4] = {
+                min_: {"label": str(int(marks[0])), "style": {"color": "#0B4F6C"}},
+                marks[1]: {"label": str(marks[1]), "style": {"color": colors["text"]}},
+                marks[2]: {"label": str(marks[2]), "style": {"color": colors["text"]}},
+                marks[3]: {"label": str(marks[3]), "style": {"color": colors["text"]}},
+                max_: {"label": str(int(marks[4])), "style": {"color": "#F50"}},
+            }
+        print(slider_dict["epsilon"])
 
         sliders = []
         for slider_key in slider_dict:
@@ -267,7 +297,18 @@ class View:
                 )
             )
             # Slider
-            sliders.append(build_slider({"id": slider_id, "value": slider_dict[slider_key]}))
+            sliders.append(
+                build_slider(
+                    {
+                        "id": slider_id,
+                        "min": slider_dict[slider_key][0],
+                        "max": slider_dict[slider_key][1],
+                        "value": slider_dict[slider_key][2],
+                        "step": slider_dict[slider_key][3],
+                        "marks": slider_dict[slider_key][4],
+                    }
+                )
+            )
 
         slider_col_1 = html.Div(
             className="col-2 my-auto align-middle",
