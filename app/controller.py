@@ -644,6 +644,24 @@ class Controller:
             # TODO find a more accurate extrapolation method to conserve relations in the param
             target_len = len(self._params[key])
             self._params[key] = [params[key] for i in range(target_len)]
+
+            # HACK Better way to update shape data for single parameter?
+            t, J, K = self._params["t"], self._params["J"], self._params["K"]
+            # Overwriting a single parameter in shapes data
+            if key in self.greeks_keys:
+                ix = self.greeks_keys.index(key)
+                greeks_data = self.greeks_data.reshape((len(self.greeks_keys), t, J, K))
+                greeks_data[ix] = np.ones((t, J, K)) * params[key]
+                self.greeks_data = greeks_data.ravel()
+
+            elif key in self.special_greeks_keys:
+                ix = self.special_greeks_keys.index(key)
+                special_greeks_data = self.special_greeks_data.reshape(
+                    (len(self.special_greeks_keys), t, J, K, K)
+                )
+                special_greeks_data[ix] = np.ones((t, J, K, K)) * params[key]
+                self.special_greeks_data = special_greeks_data.ravel()
+
         self.check_params(self._params)
 
     def get_params(self, keys: list = None) -> dict:
