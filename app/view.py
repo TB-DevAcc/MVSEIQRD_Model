@@ -33,7 +33,7 @@ class View:
 
         """
         if not params:
-            classes = self.model.controller.classes_keys
+            classes = [k for k in self.model.controller.classes_keys]
             shape_params = self.model.get_params(["t", "J", "K"])
             t, J, K = shape_params["t"], shape_params["J"], shape_params["K"]
             params = self.model.controller.classes_data.reshape((len(classes), t, J, K))
