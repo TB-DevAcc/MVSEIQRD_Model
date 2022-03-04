@@ -576,44 +576,6 @@ class Controller:
                     self._params["K"] = len(params[key][0])
                     break
 
-        # FIXME Dimensions see issue #28
-        # make sure entities and age groups are correct in every parameter
-        # for key in params:
-        #     if key not in ["K", "J", "beta"]:
-        #         if len(params[key][0]) != params["K"]:
-        #             raise ValueError(
-        #                 f"K:{self._K} does not match the first dimension of the"
-        #                 " parameters. If you intended to not subdivide the different classes,"
-        #                 " choose K=1 and wrap your parameters in a list."
-        #             )
-        #     elif key == "beta":
-        #         # TODO check correct shape of beta
-        #         pass
-
-        #     # check if classes add up to one
-        #     one = 1.0
-        #     for key in {
-        #         "M",
-        #         "V",
-        #         "S",
-        #         "E",
-        #         "E2",
-        #         "I",
-        #         "I2",
-        #         "I3",
-        #         "Q",
-        #         "Q2",
-        #         "Q3",
-        #         "R",
-        #         "D",
-        #     } & set(params.keys()):
-        #         one -= params[key]
-        # TODO temporarily outcommented; check class domains
-        # if not -1.0e-14 < one < 1.0e-14:
-        #     raise ValueError(
-        #         "Epidemiological classes do not add up to one." "Check input parameters."
-        #     )
-
     def initialize_parameters(self, params: dict = None, load_base_data: bool = False) -> dict:
         """
         Initializes all parameters either by default or by setting it with supplied params dict
