@@ -439,8 +439,8 @@ class DataHandler:
                 select_classes = ["I"]
         elif mode == "E":
             if "E2" in sim_type:
-                select_classes = ["E_tr", "E_nt"]
-            if "E" in sim_type:
+                select_classes = ["E_nt", "E_tr"]
+            elif "E" in sim_type:
                 select_classes = ["E"]
         elif mode == "V" and "V" in sim_type:
             select_classes = ["V"]
@@ -449,7 +449,9 @@ class DataHandler:
             select_classes = ["I"]
 
         data = np.sum([covid_data[classes] for classes in select_classes], axis=(0))
-        data_frame = pd.DataFrame(np.sum(data, axis=(2)))
+        old_data_frame = pd.DataFrame(np.sum(data, axis=(2)))
+        data_frame = old_data_frame.diff()
+        data_frame.iloc[0] = old_data_frame.iloc[1] / 2
 
         map_params = model.controller.map_params
         data_frame.rename(columns=map_params, inplace=True)
