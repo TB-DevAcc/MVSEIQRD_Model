@@ -470,8 +470,16 @@ class Controller:
                 param = np.array(params[keys_with_shape[i]])
                 if param.shape == shape:
                     shape_data[left:right] = param.ravel()
-                else:
+                elif len(param.shape) == 1 and (param.shape[0] == K or param.shape[0] == 1):
                     shape_data[left:right] = (np.ones(shape) * param).ravel()
+                else:
+                    temp = np.ones(shape)
+                    for a, v in enumerate(temp):
+                        for b, v in enumerate(temp[a]):
+                            for c, v in enumerate(temp[a, b]):
+                                temp[a, b, c] *= param[a, c]
+
+                    shape_data[left:right] = temp.ravel()
 
             out_dict[shape] = shape_data
 
@@ -524,6 +532,8 @@ class Controller:
             )
 
         if len(domain) == 2:
+            if type(value) == list:
+                value = np.array(value)
             if type(value) == np.ndarray:
                 for val in value.ravel():
                     if domain[0] > val or val > domain[1]:
