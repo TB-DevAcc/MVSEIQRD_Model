@@ -439,8 +439,8 @@ class DataHandler:
                 select_classes = ["I"]
         elif mode == "E":
             if "E2" in sim_type:
-                select_classes = ["E_tr", "E_nt"]
-            if "E" in sim_type:
+                select_classes = ["E_nt", "E_tr"]
+            elif "E" in sim_type:
                 select_classes = ["E"]
         elif mode == "V" and "V" in sim_type:
             select_classes = ["V"]
