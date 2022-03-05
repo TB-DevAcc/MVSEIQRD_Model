@@ -224,6 +224,65 @@ class DataHandler:
         else:
             return initial_values
 
+
+
+    def prepare_value_of_states(self, c_df, rs_df, state, group_age="all"):
+
+        """
+        Extract the covid-Data in state and/or group_age
+
+        input:
+        c_df      - (DataFrame) covid DataFrame
+        rs_df     - (DataFrame) geometry-Data (eingelesenes Shapefile)
+        state     - (String) "Bayern","Baden-Württemberg", usw...
+        group_age - (String) default ="all", input as group_age alias "A05-A14"
+
+        Return:
+        vs_df - (DataFrame) DataFrame with a grouped state and ages
+        rs_df    - (DataFrame DataFrame with geometry Data with state and ages
+
+        """
+        if group_age != "all":
+                c_df = c_df[(c_df.Altersgruppe == group_age)]
+
+        groups = c_df.groupby(c_df.Bundesland)
+        vs_df = groups.get_group(state)
+
+        duplicate = vs_df.drop_duplicates(subset=["RS"])
+        dup_lst = duplicate["RS"].tolist()
+        rs_df = rs_df[rs_df["RS"].isin(dup_lst)]
+        return vs_df, rs_df
+
+
+    def prepare_value_of_regions(self, c_df, rs_df, rs, group_age="all"):
+        """
+        Extract the covid-Data in region and/or group_age
+
+        input:
+        c_df      - (DataFrame) covid DataFrame
+        rs_df     - (DataFrame) geometry-Data (eingelesenes Shapefile)
+        region    - (String) "01001","01002"...
+        group_age - (String) default ="all", input as group_age alias "A05-A14"
+
+        Return:
+        c_df - (DataFrame) DataFrame with a grouped regioin and ages
+        rs_df    - (DataFrame DataFrame with geometry Data with state and ages
+
+        """
+
+        if group_age != "all":
+            c_df = c_df[(c_df.Altersgruppe == group_age)]
+
+        groups = c_df.groupby(c_df.RS)
+        c_df = groups.get_group(rs)
+
+        rs_df = rs_df[rs_df["RS"].isin([rs])]
+        return c_df, rs_df
+
+
+
+
+
     def real_seir(self, df, vac_df):
         """
         Return dictionary as real seir model
@@ -283,16 +342,6 @@ class DataHandler:
             param[key] = values
 
         return param
-
-
-
-
-
-
-
-
-
-
 
 
     def _load_recorded_covid_cases(self, recorded_covid_cases_path) -> pd.DataFrame:
