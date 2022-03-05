@@ -243,7 +243,7 @@ class DataHandler:
 
         """
         if group_age != "all":
-                c_df = c_df[(c_df.Altersgruppe == group_age)]
+            c_df = c_df[(c_df.Altersgruppe == group_age)]
 
         groups = c_df.groupby(c_df.Bundesland)
         vs_df = groups.get_group(state)
