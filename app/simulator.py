@@ -198,7 +198,7 @@ class Simulator:
         """
         cls = self.simulation_type.split()
         if "E2" in cls:
-            return self._build_dE_trdt(t), self._build_dE_ntdt(t)
+            return self._build_dE_ntdt(t), self._build_dE_trdt(t)
         elif "E" in cls:
             pass
 
@@ -825,8 +825,8 @@ class Simulator:
                 self.params["M"],
                 self.params["V"],
                 self.params["S"],
-                self.params["E_tr"],
                 self.params["E_nt"],
+                self.params["E_tr"],
                 self.params["I_asym"],
                 self.params["I_sym"],
                 self.params["I_sev"],
